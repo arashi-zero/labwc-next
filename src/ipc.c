@@ -157,10 +157,22 @@ handle_new_connection(int fd, uint32_t mask, void *data)
 		WL_EVENT_READABLE, handle_client_readable, client);
 	wl_list_insert(&clients, &client->link);
 
-	/* Push current workspace state immediately on connect */
-	char msg[256];
-	snprintf(msg, sizeof(msg), "workspace>>%s\n",
+	/* Push current workspace and full list immediately on connect */
+	char msg[IPC_BUF_SIZE];
+	int pos = snprintf(msg, sizeof(msg), "workspace>>%s\nworkspace-list>>",
 		server.workspaces.current->name);
+	struct workspace *ws;
+	bool first = true;
+	wl_list_for_each(ws, &server.workspaces.all, link) {
+		int r = snprintf(msg + pos, sizeof(msg) - pos,
+			"%s%s", first ? "" : ",", ws->name);
+		if (r < 0 || (size_t)(pos + r) >= sizeof(msg) - 1) {
+			break;
+		}
+		pos += r;
+		first = false;
+	}
+	snprintf(msg + pos, sizeof(msg) - pos, "\n");
 	client_send(client, msg);
 
 	wlr_log(WLR_DEBUG, "IPC client connected");
