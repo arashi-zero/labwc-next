@@ -19,6 +19,7 @@
 #include "common/scene-helpers.h"
 #include "config/rcxml.h"
 #include "input/keyboard.h"
+#include "ipc.h"
 #include "labwc.h"
 #include "output.h"
 #include "theme.h"
@@ -495,6 +496,7 @@ workspaces_switch_to(struct workspace *target, bool update_focus)
 	desktop_update_top_layer_visibility();
 
 	wlr_ext_workspace_handle_v1_set_active(target->ext_workspace, true);
+	ipc_broadcast_workspace(target->name);
 }
 
 void

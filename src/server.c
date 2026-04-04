@@ -50,6 +50,7 @@
 
 #include "action.h"
 #include "common/macros.h"
+#include "ipc.h"
 #include "common/mem.h"
 #include "common/scene-helpers.h"
 #include "config/rcxml.h"
@@ -603,6 +604,7 @@ server_init(void)
 	server.cycle_preview_tree = lab_wlr_scene_tree_create(&server.scene->tree);
 
 	workspaces_init();
+	ipc_init();
 
 	output_init();
 
@@ -806,6 +808,7 @@ server_finish(void)
 	wl_list_remove(&server.renderer_lost.link);
 	wlr_renderer_destroy(server.renderer);
 
+	ipc_finish();
 	workspaces_destroy();
 	wlr_scene_node_destroy(&server.scene->tree.node);
 

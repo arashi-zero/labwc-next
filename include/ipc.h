@@ -1,0 +1,29 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+#ifndef LABWC_IPC_H
+#define LABWC_IPC_H
+
+/*
+ * Simple Unix socket IPC for external clients (e.g. Quickshell).
+ *
+ * Socket path: $XDG_RUNTIME_DIR/labwc-next.sock
+ * Env var:     LABWC_NEXT_SOCKET (set to full path on startup)
+ *
+ * Wire format (all messages newline-terminated):
+ *
+ *   Events (compositor → client):
+ *     workspace>><name>          current workspace changed / initial state
+ *     workspace-list>><n1>,<n2>  response to 'workspace list' command
+ *     error: <msg>               command failed
+ *
+ *   Commands (client → compositor):
+ *     workspace switch <name>    activate workspace by name (or next/prev/last)
+ *     workspace list             list all workspace names
+ */
+
+void ipc_init(void);
+void ipc_finish(void);
+
+/* Called by workspaces.c after every workspace switch */
+void ipc_broadcast_workspace(const char *name);
+
+#endif /* LABWC_IPC_H */
