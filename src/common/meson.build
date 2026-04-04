@@ -10,7 +10,6 @@ labwc_sources += files(
   'lab-scene-rect.c',
   'match.c',
   'mem.c',
-  'nodename.c',
   'node-type.c',
   'parse-bool.c',
   'parse-double.c',
@@ -18,5 +17,4 @@ labwc_sources += files(
   'set.c',
   'spawn.c',
   'string-helpers.c',
-  'xml.c',
 )

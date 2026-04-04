@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include "desktop-entry.h"
 #include <locale.h>
+#include <stdio.h>
 #include <sfdo-desktop.h>
 #include <sfdo-icon.h>
 #include <sfdo-basedir.h>

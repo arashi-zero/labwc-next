@@ -2,7 +2,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "menu/menu.h"
 #include <assert.h>
-#include <libxml/parser.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +20,6 @@
 #include "common/scene-helpers.h"
 #include "common/spawn.h"
 #include "common/string-helpers.h"
-#include "common/xml.h"
 #include "config/rcxml.h"
 #include "labwc.h"
 #include "node.h"
@@ -464,33 +462,6 @@ menu_create_scene(struct menu *menu)
 	wlr_scene_node_lower_to_bottom(&bg_rect->tree->node);
 }
 
-/*
- * Handle the following:
- * <item label="">
- *   <action name="">
- *     <command></command>
- *   </action>
- * </item>
- */
-static void
-fill_item(struct menu *menu, xmlNode *node)
-{
-	char *label = (char *)xmlGetProp(node, (xmlChar *)"label");
-	char *icon_name = (char *)xmlGetProp(node, (xmlChar *)"icon");
-	if (!label) {
-		wlr_log(WLR_ERROR, "missing label in <item>");
-		goto out;
-	}
-
-	struct menuitem *item = item_create(menu, label, icon_name, false);
-	lab_xml_expand_dotted_attributes(node);
-	append_parsed_actions(node, &item->actions);
-
-out:
-	xmlFree(label);
-	xmlFree(icon_name);
-}
-
 static void
 item_destroy(struct menuitem *item)
 {
@@ -504,206 +475,8 @@ item_destroy(struct menuitem *item)
 	free(item);
 }
 
-static bool parse_buf(struct menu *menu, struct buf *buf);
 static int handle_pipemenu_readable(int fd, uint32_t mask, void *_ctx);
 static int handle_pipemenu_timeout(void *_ctx);
-static void fill_menu_children(struct menu *parent, xmlNode *n);
-
-/*
- * <menu> elements have three different roles:
- *  * Definition of (sub)menu - has ID, LABEL and CONTENT
- *  * Menuitem of pipemenu type - has ID, LABEL and EXECUTE
- *  * Menuitem of submenu type - has ID only
- */
-static void
-fill_menu(struct menu *parent, xmlNode *n)
-{
-	char *label = (char *)xmlGetProp(n, (const xmlChar *)"label");
-	char *icon_name = (char *)xmlGetProp(n, (const xmlChar *)"icon");
-	char *execute = (char *)xmlGetProp(n, (const xmlChar *)"execute");
-	char *id = (char *)xmlGetProp(n, (const xmlChar *)"id");
-
-	if (!id) {
-		wlr_log(WLR_ERROR, "<menu> without id is not allowed");
-		goto error;
-	}
-
-	if (execute && label) {
-		wlr_log(WLR_DEBUG, "pipemenu '%s:%s:%s'", id, label, execute);
-
-		struct menu *pipemenu = menu_create(parent, id, label);
-		pipemenu->execute = xstrdup(execute);
-		if (!parent) {
-			/*
-			 * A pipemenu may not have its parent like:
-			 *
-			 * <?xml version="1.0" encoding="UTF-8"?>
-			 * <openbox_menu>
-			 *   <menu id="root-menu" label="foo" execute="bar"/>
-			 * </openbox_menu>
-			 */
-		} else {
-			struct menuitem *item = item_create(parent, label,
-				icon_name, /* arrow */ true);
-			item->submenu = pipemenu;
-		}
-	} else if ((label && parent) || !parent) {
-		/*
-		 * (label && parent) refers to <menu id="" label="">
-		 * which is an nested (inline) menu definition.
-		 *
-		 * (!parent) catches:
-		 *     <openbox_menu>
-		 *       <menu id=""></menu>
-		 *     </openbox_menu>
-		 * or
-		 *     <openbox_menu>
-		 *       <menu id="" label=""></menu>
-		 *     </openbox_menu>
-		 *
-		 * which is the highest level a menu can be defined at.
-		 *
-		 * Openbox spec requires a label="" defined here, but it is
-		 * actually pointless so we handle it with or without the label
-		 * attribute to make it easier for users to define "root-menu"
-		 * and "client-menu".
-		 */
-		struct menu *menu = menu_create(parent, id, label);
-		if (icon_name) {
-			menu->icon_name = xstrdup(icon_name);
-		}
-		if (label && parent) {
-			/*
-			 * In a nested (inline) menu definition we need to
-			 * create an item pointing to the new submenu
-			 */
-			struct menuitem *item = item_create(parent, label,
-				icon_name, true);
-			item->submenu = menu;
-		}
-		fill_menu_children(menu, n);
-	} else {
-		/*
-		 * <menu id=""> (when inside another <menu> element) creates an
-		 * entry which points to a menu defined elsewhere.
-		 *
-		 * This is only supported in static menus. Pipemenus need to use
-		 * nested (inline) menu definitions, otherwise we could have a
-		 * pipemenu opening the "root-menu" or similar.
-		 */
-
-		if (waiting_for_pipe_menu) {
-			wlr_log(WLR_ERROR,
-				"cannot link to static menu from pipemenu");
-			goto error;
-		}
-
-		struct menu *menu = menu_get_by_id(id);
-		if (!menu) {
-			wlr_log(WLR_ERROR, "no menu with id '%s'", id);
-			goto error;
-		}
-
-		struct menu *iter = parent;
-		while (iter) {
-			if (iter == menu) {
-				wlr_log(WLR_ERROR, "menus with the same id '%s' "
-					"cannot be nested", id);
-				goto error;
-			}
-			iter = iter->parent;
-		}
-
-		struct menuitem *item = item_create(parent, menu->label,
-			icon_name ? icon_name : menu->icon_name, true);
-		item->submenu = menu;
-	}
-error:
-	xmlFree(label);
-	xmlFree(icon_name);
-	xmlFree(execute);
-	xmlFree(id);
-}
-
-/* This can be one of <separator> and <separator label=""> */
-static void
-fill_separator(struct menu *menu, xmlNode *n)
-{
-	char *label = (char *)xmlGetProp(n, (const xmlChar *)"label");
-	separator_create(menu, label);
-	xmlFree(label);
-}
-
-/* parent==NULL when processing toplevel menus in menu.xml */
-static void
-fill_menu_children(struct menu *parent, xmlNode *n)
-{
-	xmlNode *child;
-	char *key, *content;
-	LAB_XML_FOR_EACH(n, child, key, content) {
-		if (!strcasecmp(key, "menu")) {
-			fill_menu(parent, child);
-		} else if (!strcasecmp(key, "separator")) {
-			if (!parent) {
-				wlr_log(WLR_ERROR,
-					"ignoring <separator> without parent <menu>");
-				continue;
-			}
-			fill_separator(parent, child);
-		} else if (!strcasecmp(key, "item")) {
-			if (!parent) {
-				wlr_log(WLR_ERROR,
-					"ignoring <item> without parent <menu>");
-				continue;
-			}
-			fill_item(parent, child);
-		}
-	}
-}
-
-static bool
-parse_buf(struct menu *parent, struct buf *buf)
-{
-	int options = 0;
-	xmlDoc *d = xmlReadMemory(buf->data, buf->len, NULL, NULL, options);
-	if (!d) {
-		wlr_log(WLR_ERROR, "xmlParseMemory()");
-		return false;
-	}
-
-	xmlNode *root = xmlDocGetRootElement(d);
-	fill_menu_children(parent, root);
-
-	xmlFreeDoc(d);
-	xmlCleanupParser();
-	return true;
-}
-
-static void
-parse_xml(const char *filename)
-{
-	struct wl_list paths;
-	paths_config_create(&paths, filename);
-
-	bool should_merge_config = rc.merge_config;
-	struct wl_list *(*iter)(struct wl_list *list);
-	iter = should_merge_config ? paths_get_prev : paths_get_next;
-
-	for (struct wl_list *elm = iter(&paths); elm != &paths; elm = iter(elm)) {
-		struct path *path = wl_container_of(elm, path, link);
-		struct buf buf = buf_from_file(path->string);
-		if (!buf.len) {
-			continue;
-		}
-		wlr_log(WLR_INFO, "read menu file %s", path->string);
-		parse_buf(/*parent*/ NULL, &buf);
-		buf_reset(&buf);
-		if (!should_merge_config) {
-			break;
-		}
-	}
-	paths_destroy(&paths);
-}
 
 /*
  * Returns the box of a menuitem next to which its submenu is opened.
@@ -1199,7 +972,6 @@ menu_init(void)
 	menu_create(NULL, "client-send-to-menu", _("Workspace"));
 
 	menu_toml_read();
-	parse_xml("menu.xml");
 	init_rootmenu();
 	init_windowmenu();
 	validate();
@@ -1425,10 +1197,29 @@ menu_open_root(struct menu *menu, int x, int y)
 		LAB_INPUT_STATE_MENU, LAB_CURSOR_DEFAULT);
 }
 
+static bool
+menu_toml_from_buf(struct menu *parent, struct buf *buf)
+{
+	toml_result_t result = toml_parse(buf->data, buf->len);
+	if (!result.ok) {
+		wlr_log(WLR_ERROR, "pipemenu TOML parse error: %s", result.errmsg);
+		toml_free(result);
+		return false;
+	}
+	toml_datum_t menus = toml_seek(result.toptab, "menu");
+	if (menus.type == TOML_ARRAY) {
+		for (int i = 0; i < menus.u.arr.size; i++) {
+			toml_fill_menu(parent, menus.u.arr.elem[i]);
+		}
+	}
+	toml_free(result);
+	return true;
+}
+
 static void
 create_pipe_menu(struct menu_pipe_context *ctx)
 {
-	if (!parse_buf(ctx->pipemenu, &ctx->buf)) {
+	if (!menu_toml_from_buf(ctx->pipemenu, &ctx->buf)) {
 		return;
 	}
 	/* TODO: apply validate() only for generated pipemenus */

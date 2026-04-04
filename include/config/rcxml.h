@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <wayland-server-core.h>
 #include <wlr/util/box.h>
-#include <libxml/tree.h>
 
 #include "common/border.h"
 #include "common/font.h"
@@ -221,11 +220,5 @@ void rcxml_finish(void);
 
 /* Exposed for use by config-toml.c */
 void rcxml_fill_title_layout(const char *content);
-
-/*
- * Parse the child <action> nodes and append them to the list.
- * FIXME: move this function to somewhere else.
- */
-void append_parsed_actions(xmlNode *node, struct wl_list *list);
 
 #endif /* LABWC_RCXML_H */
