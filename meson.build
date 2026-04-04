@@ -68,6 +68,7 @@ xcb_icccm = dependency('xcb-icccm', required: get_option('xwayland'))
 drm_full = dependency('libdrm', required: wlroots.get_variable('have_drm_backend') == 'true')
 drm = drm_full.partial_dependency(compile_args: true, includes: true)
 xml2 = dependency('libxml-2.0')
+tomlc17 = dependency('tomlc17', fallback: ['tomlc17', 'tomlc17_dep'])
 glib = dependency('glib-2.0')
 cairo = dependency('cairo')
 pangocairo = dependency('pangocairo')
@@ -166,6 +167,7 @@ labwc_deps = [
 	xcb_ewmh,
   xcb_icccm,
   xml2,
+  tomlc17,
   glib,
   cairo,
   drm,
