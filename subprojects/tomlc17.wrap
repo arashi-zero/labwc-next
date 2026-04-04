@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/cktan/tomlc17.git
+revision = R260323
+patch_directory = tomlc17
+
+[provide]
+tomlc17 = tomlc17_dep
