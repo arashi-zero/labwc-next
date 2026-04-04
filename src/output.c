@@ -451,9 +451,9 @@ handle_new_output(struct wl_listener *listener, void *data)
 
 	if (wlr_output_is_wl(wlr_output)) {
 		char title[64];
-		snprintf(title, sizeof(title), "%s - %s", "labwc", wlr_output->name);
+		snprintf(title, sizeof(title), "%s - %s", "labwc-next", wlr_output->name);
 		wlr_wl_output_set_title(wlr_output, title);
-		wlr_wl_output_set_app_id(wlr_output, "labwc");
+		wlr_wl_output_set_app_id(wlr_output, "labwc-next");
 	}
 
 	/*

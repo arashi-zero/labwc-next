@@ -1726,7 +1726,7 @@ post_processing(void)
 				"--timeout 0");
 	}
 	if (!rc.fallback_app_icon_name) {
-		rc.fallback_app_icon_name = xstrdup("labwc");
+		rc.fallback_app_icon_name = xstrdup("labwc-next");
 	}
 
 	if (!rc.icon_theme_name && rc.theme_name) {

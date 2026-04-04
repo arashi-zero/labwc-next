@@ -1,5 +1,5 @@
 project(
-  'labwc',
+  'labwc-next',
   'c',
   version: '0.9.5',
   license: 'GPL-2.0-only',
@@ -209,11 +209,11 @@ executable(
   link_args: link_args,
 )
 
-install_data('data/labwc.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
+install_data('data/labwc-next.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
 
-install_data('data/labwc-portals.conf', install_dir: get_option('datadir') / 'xdg-desktop-portal')
+install_data('data/labwc-next-portals.conf', install_dir: get_option('datadir') / 'xdg-desktop-portal')
 
-icons = ['labwc-symbolic.svg', 'labwc.svg']
+icons = ['labwc-next-symbolic.svg', 'labwc-next.svg']
 foreach icon : icons
   icon_path = join_paths('data', icon)
   install_data(icon_path, install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps')
