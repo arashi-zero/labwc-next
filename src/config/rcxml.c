@@ -22,6 +22,7 @@
 #include "common/parse-double.h"
 #include "common/string-helpers.h"
 #include "common/xml.h"
+#include "config/config-toml.h"
 #include "config/default-bindings.h"
 #include "config/keybind.h"
 #include "config/libinput.h"
@@ -178,8 +179,8 @@ clear_title_layout(void)
 	rc.title_layout_loaded = false;
 }
 
-static void
-fill_title_layout(const char *content)
+void
+rcxml_fill_title_layout(const char *content)
 {
 	clear_title_layout();
 
@@ -1124,7 +1125,7 @@ entry(xmlNode *node, char *nodename, char *content)
 	} else if (!strcasecmp(nodename, "fallbackAppIcon.theme")) {
 		xstrdup_replace(rc.fallback_app_icon_name, content);
 	} else if (!strcasecmp(nodename, "layout.titlebar.theme")) {
-		fill_title_layout(content);
+		rcxml_fill_title_layout(content);
 	} else if (!strcasecmp(nodename, "showTitle.titlebar.theme")) {
 		rc.show_title = parse_bool(content, true);
 	} else if (!strcmp(nodename, "cornerradius.theme")) {
@@ -1734,14 +1735,14 @@ post_processing(void)
 
 	if (!rc.title_layout_loaded) {
 #if HAVE_LIBSFDO
-		fill_title_layout("icon:iconify,max,close");
+		rcxml_fill_title_layout("icon:iconify,max,close");
 #else
 		/*
 		 * 'icon' is replaced with 'menu' in fill_title_layout() when
 		 * libsfdo is not linked, but we also replace it here not to
 		 * show error message with default settings.
 		 */
-		fill_title_layout("menu:iconify,max,close");
+		rcxml_fill_title_layout("menu:iconify,max,close");
 #endif
 	}
 
@@ -1917,6 +1918,16 @@ void
 rcxml_read(const char *filename)
 {
 	rcxml_init();
+
+	/*
+	 * Prefer config.toml if it exists. Fall back to rc.xml for
+	 * backward compatibility.
+	 */
+	if (config_toml_read(filename)) {
+		post_processing();
+		validate();
+		return;
+	}
 
 	struct wl_list paths;
 

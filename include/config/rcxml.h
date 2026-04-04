@@ -219,6 +219,9 @@ extern struct rcxml rc;
 void rcxml_read(const char *filename);
 void rcxml_finish(void);
 
+/* Exposed for use by config-toml.c */
+void rcxml_fill_title_layout(const char *content);
+
 /*
  * Parse the child <action> nodes and append them to the list.
  * FIXME: move this function to somewhere else.
