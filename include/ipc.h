@@ -18,6 +18,7 @@
  *   Commands (client → compositor):
  *     workspace switch <name>    activate workspace by name (or next/prev/last)
  *     workspace list             list all workspace names
+ *     reconfigure                reload config and theme (same as SIGHUP)
  */
 
 void ipc_init(void);

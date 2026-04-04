@@ -79,21 +79,36 @@ ShellRoot {
 
         parser: SplitParser {
             onRead: msg => {
-                if (msg.startsWith("workspace>>"))
+                console.log("IPC recv:", msg)
+                if (msg.startsWith("workspace>>")) {
                     shellRoot.activeWorkspace = msg.slice(11)
-                else if (msg.startsWith("workspace-list>>"))
+                } else if (msg.startsWith("workspace-list>>")) {
                     shellRoot.workspaces = msg.slice(16).split(",")
+                }
             }
+        }
+
+        onConnectedChanged: {
+            console.log("IPC connected:", connected)
         }
 
         function switchTo(name) {
             write("workspace switch " + name + "\n")
             flush()
         }
+
+        function reconfigure() {
+            write("reconfigure\n")
+            flush()
+        }
     }
 
     PanelWindow {
-        anchors { top: true; left: true; right: true }
+        anchors {
+            top: true
+            left: true
+            right: true
+        }
         implicitHeight: 36
         exclusiveZone: implicitHeight
         color: "#1e1e2e"
@@ -106,15 +121,18 @@ ShellRoot {
 
             Repeater {
                 model: shellRoot.workspaces
+
                 Rectangle {
                     required property string modelData
                     readonly property bool active: modelData === shellRoot.activeWorkspace
+
                     Layout.fillHeight: true
                     Layout.topMargin: 6
                     Layout.bottomMargin: 6
                     implicitWidth: label.implicitWidth + 20
                     radius: 4
                     color: active ? "#cba6f7" : "transparent"
+
                     Text {
                         id: label
                         anchors.centerIn: parent
@@ -123,6 +141,7 @@ ShellRoot {
                         font.pixelSize: 13
                         font.bold: parent.active
                     }
+
                     MouseArea {
                         anchors.fill: parent
                         onClicked: ipc.switchTo(modelData)
@@ -132,6 +151,31 @@ ShellRoot {
             }
 
             Item { Layout.fillWidth: true }
+
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.topMargin: 6
+                Layout.bottomMargin: 6
+                implicitWidth: reloadLabel.implicitWidth + 16
+                radius: 4
+                color: reloadArea.containsMouse ? "#45475a" : "transparent"
+
+                Text {
+                    id: reloadLabel
+                    anchors.centerIn: parent
+                    text: "reload"
+                    color: "#6c7086"
+                    font.pixelSize: 12
+                }
+
+                MouseArea {
+                    id: reloadArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: ipc.reconfigure()
+                    cursorShape: Qt.PointingHandCursor
+                }
+            }
         }
     }
 }
@@ -140,7 +184,7 @@ ShellRoot {
 **IPC wire format:**
 - On connect: compositor sends `workspace>><name>` and `workspace-list>><n1>,<n2>,...`
 - On workspace change: compositor sends `workspace>><name>`
-- Commands: `workspace switch <name>\n`, `workspace list\n`
+- Commands: `workspace switch <name>\n`, `workspace list\n`, `reconfigure\n`
 
 ---
 

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +83,8 @@ handle_command(struct ipc_client *client, const char *cmd)
 		}
 		snprintf(msg + pos, sizeof(msg) - pos, "\n");
 		client_send(client, msg);
+	} else if (strcmp(cmd, "reconfigure") == 0) {
+		raise(SIGHUP);
 	} else {
 		client_send(client, "error: unknown command\n");
 	}
