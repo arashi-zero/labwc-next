@@ -127,8 +127,13 @@ font_buffer_create(struct lab_data_buffer **buffer, int max_width,
 	pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
 	if (!opaque_bg) {
-		/* disable subpixel rendering */
+		/*
+		 * Subpixel rendering requires a known opaque background to avoid
+		 * color fringing, so force grayscale antialias. Preserve all other
+		 * font options (hint style etc.) from the surface / fontconfig.
+		 */
 		cairo_font_options_t *opts = cairo_font_options_create();
+		cairo_surface_get_font_options(surf, opts);
 		cairo_font_options_set_antialias(opts, CAIRO_ANTIALIAS_GRAY);
 		PangoContext *ctx = pango_layout_get_context(layout);
 		pango_cairo_context_set_font_options(ctx, opts);
