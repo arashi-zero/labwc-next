@@ -565,11 +565,15 @@ static void
 theme_builtin(struct theme *theme)
 {
 	theme->border_width = 1;
+	theme->titlebar_bottom_border_width = 0;
 	theme->window_titlebar_padding_height = 0;
 	theme->window_titlebar_padding_width = 0;
 
 	parse_hexstr("#aaaaaa", theme->window[SSD_ACTIVE].border_color);
 	parse_hexstr("#aaaaaa", theme->window[SSD_INACTIVE].border_color);
+	/* FLT_MIN = inherit from border_color in post_processing() */
+	theme->window[SSD_ACTIVE].titlebar_bottom_border_color[0] = FLT_MIN;
+	theme->window[SSD_INACTIVE].titlebar_bottom_border_color[0] = FLT_MIN;
 
 	parse_hexstr("#ff0000", theme->window_toggled_keybinds_color);
 
@@ -1708,6 +1712,16 @@ post_processing(struct theme *theme)
 		&theme->osd_window_switcher_thumbnail;
 
 	theme->titlebar_height = get_titlebar_height(theme);
+
+	/* Titlebar bottom border color defaults to window border_color */
+	enum ssd_active_state active_state2;
+	FOR_EACH_ACTIVE_STATE(active_state2) {
+		if (theme->window[active_state2].titlebar_bottom_border_color[0] == FLT_MIN) {
+			memcpy(theme->window[active_state2].titlebar_bottom_border_color,
+				theme->window[active_state2].border_color,
+				sizeof(float[4]));
+		}
+	}
 
 	fill_background_colors(&theme->window[SSD_INACTIVE].title_bg);
 	fill_background_colors(&theme->window[SSD_ACTIVE].title_bg);

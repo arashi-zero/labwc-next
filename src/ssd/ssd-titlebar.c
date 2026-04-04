@@ -80,6 +80,20 @@ ssd_titlebar_create(struct ssd *ssd)
 		node_descriptor_create(&subtree->title->scene_buffer->node,
 			LAB_NODE_TITLE, view, /*data*/ NULL);
 
+		/* Titlebar bottom border */
+		int bb = theme->titlebar_bottom_border_width;
+		if (bb > 0) {
+			float *color = theme->window[active].titlebar_bottom_border_color;
+			subtree->bottom_border = wlr_scene_rect_create(
+				parent, width, bb,
+				(const float[4]){ color[0], color[1], color[2], color[3] });
+			wlr_scene_node_set_position(
+				&subtree->bottom_border->node,
+				0, theme->titlebar_height - bb);
+		} else {
+			subtree->bottom_border = NULL;
+		}
+
 		/* Buttons */
 		int x = theme->window_titlebar_padding_width;
 
@@ -337,6 +351,11 @@ ssd_titlebar_update(struct ssd *ssd)
 		struct ssd_titlebar_subtree *subtree = &ssd->titlebar.subtrees[active];
 		wlr_scene_buffer_set_dest_size(subtree->bar,
 			MAX(width - bg_offset * 2, 0), theme->titlebar_height);
+
+		if (subtree->bottom_border) {
+			wlr_scene_rect_set_size(subtree->bottom_border,
+				width, theme->titlebar_bottom_border_width);
+		}
 
 		x = theme->window_titlebar_padding_width;
 		struct ssd_button *button;

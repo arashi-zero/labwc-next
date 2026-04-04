@@ -233,6 +233,8 @@ parse_window_state(toml_datum_t sec, struct theme *theme,
 	int i;
 
 	toml_color(sec, "border", theme->window[active].border_color);
+	toml_color(sec, "titlebar-bottom-border-color",
+		theme->window[active].titlebar_bottom_border_color);
 	toml_color(sec, "title-bg", theme->window[active].title_bg.color);
 	toml_color(sec, "title-bg-to",
 		theme->window[active].title_bg.color_to);
@@ -276,6 +278,9 @@ parse_window_colors(toml_datum_t root, struct theme *theme)
 	}
 	if (toml_int(sec, "titlebar-padding-height", &i) && i >= 0) {
 		theme->window_titlebar_padding_height = i;
+	}
+	if (toml_int(sec, "titlebar-bottom-border-width", &i) && i >= 0) {
+		theme->titlebar_bottom_border_width = i;
 	}
 	if (toml_str(sec, "title-justify", &s)) {
 		theme->window_label_text_justify = parse_justify(s);

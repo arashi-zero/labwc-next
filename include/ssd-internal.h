@@ -104,6 +104,7 @@ struct ssd {
 			struct wlr_scene_buffer *corner_right;
 			struct wlr_scene_buffer *bar;
 			struct scaled_font_buffer *title;
+			struct wlr_scene_rect *bottom_border;
 			struct wl_list buttons_left; /* ssd_button.link */
 			struct wl_list buttons_right; /* ssd_button.link */
 		} subtrees[2]; /* indexed by enum ssd_active_state */

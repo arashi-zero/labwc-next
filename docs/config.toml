@@ -351,6 +351,9 @@ border-width = 1
 [theme.colors.window]
 titlebar-padding-width  = 0
 titlebar-padding-height = 0
+# Thin line at the bottom edge of the titlebar (0 = disabled)
+# titlebar-bottom-border-width = 1
+# titlebar-bottom-border-width = 1  # px; 0 = disabled (default)
 
 # Text justify: "left", "center", "right"
 title-justify = "center"
@@ -377,8 +380,9 @@ hover-corner-radius = 0
 # [theme.colors.window.active]  Focused window
 # ---------------------------------------------------------------------------
 [theme.colors.window.active]
-border           = "#aaaaaa"
-title-bg         = "#e1dedb"
+border      = "#aaaaaa"
+# titlebar-bottom-border-color = "#aaaaaa"  # defaults to border color
+title-bg    = "#e1dedb"
 # title-bg-gradient = "none"   # "none", "vertical", "splitvertical"
 # title-bg-to        = "#..."  # gradient end color
 # title-bg-split-to  = "#..."  # SplitVertical top-right / bottom-left
@@ -412,6 +416,7 @@ all          = "#000000"   # sets all button icon colors at once
 # ---------------------------------------------------------------------------
 [theme.colors.window.inactive]
 border      = "#aaaaaa"
+# titlebar-bottom-border-color = "#aaaaaa"  # defaults to border color
 title-bg    = "#f6f5f4"
 title-text  = "#000000"
 shadow-size = 40

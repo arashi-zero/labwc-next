@@ -69,6 +69,7 @@ struct theme {
 	int window_titlebar_padding_height;
 
 	int titlebar_height;
+	int titlebar_bottom_border_width; /* 0 = disabled */
 
 	float window_toggled_keybinds_color[4];
 	enum lab_justification window_label_text_justify;
@@ -104,6 +105,7 @@ struct theme {
 		float button_hover_colors[LAB_NODE_BUTTON_LAST + 1][4];
 
 		float border_color[4];
+		float titlebar_bottom_border_color[4];
 		float toggled_keybinds_color[4];
 		float label_text_color[4];
 
