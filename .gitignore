@@ -1,5 +1,6 @@
-# VS Code cache
+# VS Code
 .cache
+.vscode
 
 # vim swap files
 *.swp
