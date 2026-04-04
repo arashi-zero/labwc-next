@@ -162,6 +162,9 @@ parse_core(toml_datum_t root)
 	if (toml_str(sec, "prompt-command", &s)) {
 		xstrdup_replace(rc.prompt_command, s);
 	}
+	if (toml_str(sec, "bell-command", &s)) {
+		xstrdup_replace(rc.bell_command, s);
+	}
 }
 
 static void

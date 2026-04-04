@@ -39,6 +39,7 @@
 #include <wlr/types/wlr_xdg_foreign_registry.h>
 #include <wlr/types/wlr_xdg_foreign_v1.h>
 #include <wlr/types/wlr_xdg_foreign_v2.h>
+#include <wlr/types/wlr_xdg_system_bell_v1.h>
 
 #if HAVE_XWAYLAND
 	#include <wlr/xwayland.h>
@@ -50,6 +51,7 @@
 
 #include "action.h"
 #include "common/macros.h"
+#include "common/spawn.h"
 #include "ipc.h"
 #include "common/mem.h"
 #include "common/scene-helpers.h"
@@ -429,6 +431,14 @@ handle_renderer_lost(struct wl_listener *listener, void *data)
 	wlr_renderer_destroy(old_renderer);
 }
 
+static void
+handle_bell_ring(struct wl_listener *listener, void *data)
+{
+	if (rc.bell_command) {
+		spawn_async_no_shell(rc.bell_command);
+	}
+}
+
 void
 server_init(void)
 {
@@ -727,6 +737,13 @@ server_init(void)
 	server.tablet_manager = wlr_tablet_v2_create(server.wl_display);
 
 	layers_init();
+
+	/* XDG system bell */
+	static struct wl_listener bell_ring_listener;
+	struct wlr_xdg_system_bell_v1 *bell =
+		wlr_xdg_system_bell_v1_create(server.wl_display, 1);
+	bell_ring_listener.notify = handle_bell_ring;
+	wl_signal_add(&bell->events.ring, &bell_ring_listener);
 
 	/* These get cleaned up automatically on display destroy */
 	struct wlr_xdg_foreign_registry *registry =
