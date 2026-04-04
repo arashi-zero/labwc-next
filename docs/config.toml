@@ -334,3 +334,202 @@ notify-client = "always"
 enabled     = true
 delay-inner = 500   # ms before overlay appears for inner-range snaps
 delay-outer = 500   # ms before overlay appears for outer-range snaps
+
+# ---------------------------------------------------------------------------
+# [theme.colors]  SSD / UI colors (all default values shown)
+#
+# Colors are #RRGGBB or #RRGGBBAA (alpha, pre-multiplied by compositor).
+# Omit any key to keep the built-in default.
+# ---------------------------------------------------------------------------
+
+[theme.colors]
+border-width = 1
+
+# ---------------------------------------------------------------------------
+# [theme.colors.window]  Titlebar geometry shared by active + inactive
+# ---------------------------------------------------------------------------
+[theme.colors.window]
+titlebar-padding-width  = 0
+titlebar-padding-height = 0
+
+# Text justify: "left", "center", "right"
+title-justify = "center"
+
+# Indicator shown when global keybinds are toggled off (ToggleKeybinds action)
+toggled-keybind-indicator = "#ff0000"
+
+# Button geometry (shared)
+[theme.colors.window.button]
+width               = 26
+height              = 26
+spacing             = 0
+hover-bg            = "#80808020"
+hover-corner-radius = 0
+
+# ---------------------------------------------------------------------------
+# [theme.colors.window.active]  Focused window
+# ---------------------------------------------------------------------------
+[theme.colors.window.active]
+border           = "#aaaaaa"
+title-bg         = "#e1dedb"
+# title-bg-gradient = "none"   # "none", "vertical", "splitvertical"
+# title-bg-to        = "#..."  # gradient end color
+# title-bg-split-to  = "#..."  # SplitVertical top-right / bottom-left
+# title-bg-to-split-to = "#..." # SplitVertical bottom-right
+title-text       = "#000000"
+shadow-size      = 60
+shadow-color     = "#00000060"
+
+[theme.colors.window.active.button]
+all          = "#000000"   # sets all button icon colors at once
+# Per-button overrides (uncomment to use):
+# close       = "#cc0000"
+# maximize    = "#000000"
+# minimize    = "#000000"
+# shade       = "#000000"
+# omnipresent = "#000000"
+# menu        = "#000000"
+
+# ---------------------------------------------------------------------------
+# [theme.colors.window.inactive]  Unfocused windows
+# ---------------------------------------------------------------------------
+[theme.colors.window.inactive]
+border      = "#aaaaaa"
+title-bg    = "#f6f5f4"
+title-text  = "#000000"
+shadow-size = 40
+shadow-color = "#00000040"
+
+[theme.colors.window.inactive.button]
+all = "#000000"
+
+# ---------------------------------------------------------------------------
+# [theme.colors.menu]  Right-click and client menus
+# ---------------------------------------------------------------------------
+[theme.colors.menu]
+overlap-x              = 0
+overlap-y              = 0
+min-width              = 20
+max-width              = 200
+border-width           = 1
+border                 = "#aaaaaa"
+bg                     = "#fcfbfa"
+text                   = "#000000"
+active-bg              = "#e1dedb"
+active-text            = "#000000"
+padding-x              = 7
+padding-y              = 4
+separator-width        = 1
+separator-padding-width  = 6
+separator-padding-height = 3
+separator-color        = "#888888"
+title-bg               = "#589bda"
+title-text             = "#ffffff"
+title-justify          = "center"
+
+# ---------------------------------------------------------------------------
+# [theme.colors.osd]  On-screen display (window switcher, workspace popup)
+# ---------------------------------------------------------------------------
+[theme.colors.osd]
+bg           = "#e1dedb"
+border       = "#000000"
+border-width = 1
+text         = "#000000"
+
+# [theme.colors.osd.switcher-classic]  Alt-Tab classic list style
+[theme.colors.osd.switcher-classic]
+width                  = 600   # px (or set width-percent for a % of screen)
+padding                = 4
+item-padding-x         = 10
+item-padding-y         = 1
+item-active-border-width = 2
+item-active-border     = "#706f6d"
+item-active-bg         = "#bfbcba"
+# item-icon-size       = 16    # defaults to font size
+
+# [theme.colors.osd.switcher-thumbnail]  Alt-Tab thumbnail grid style
+[theme.colors.osd.switcher-thumbnail]
+# max-width              = 80   # use max-width-percent instead for %
+item-width             = 300
+item-height            = 250
+item-padding           = 10
+item-active-border-width = 2
+item-active-border     = "#706f6d"
+item-active-bg         = "#bfbcba"
+item-icon-size         = 60
+
+# [theme.colors.osd.preview]  Border drawn around previewed windows
+[theme.colors.osd.preview]
+border-width  = 1
+# border-colors = ["#dddda6", "#000000", "#dddda6"]  # up to 3 colors
+
+# [theme.colors.osd.workspace-switcher]  Workspace popup boxes
+[theme.colors.osd.workspace-switcher]
+boxes-width        = 20
+boxes-height       = 20
+boxes-border-width = 2
+
+# ---------------------------------------------------------------------------
+# [theme.colors.snapping]  Edge-snap overlay colors
+# ---------------------------------------------------------------------------
+[theme.colors.snapping]
+
+# "region" = snapping to a defined region; "edge" = snapping to screen edge.
+# bg-enabled / border-enabled defaults depend on the renderer:
+#   hardware renderers: bg on, border off
+#   software/pixman:    bg off, border on
+
+[theme.colors.snapping.region]
+bg-enabled     = true
+border-enabled = false
+bg             = "#8080b380"
+border-width   = 1
+# border-colors = ["#8080b3ff", "#8080b3ff", "#8080b3ff"]
+
+[theme.colors.snapping.edge]
+bg-enabled     = true
+border-enabled = false
+bg             = "#8080b380"
+border-width   = 1
+# border-colors = ["#8080b3ff", "#8080b3ff", "#8080b3ff"]
+
+# ---------------------------------------------------------------------------
+# [theme.colors.magnifier]  Screen magnifier border
+# ---------------------------------------------------------------------------
+[theme.colors.magnifier]
+border-width = 1
+border       = "#ff0000"
+
+# ---------------------------------------------------------------------------
+# [[menu]]  Static menu definitions
+#
+# Any number of [[menu]] blocks can appear in any *.toml file.
+# They are loaded before menu.xml, so TOML menus take precedence.
+#
+# Supported item types (inside [[menu.item]]):
+#   separator = true           — plain separator line
+#   separator = "Label"        — titled separator
+#   label + actions            — regular item
+#   label + submenu = "id"     — link to another menu by id
+#   label + execute = "cmd"    — pipemenu
+#   label + [[menu.item.item]] — inline nested submenu
+# ---------------------------------------------------------------------------
+
+# [[menu]]
+# id    = "root-menu"
+# label = "Root"
+#
+# [[menu.item]]
+# label   = "Terminal"
+# actions = [{name = "Execute", command = "foot"}]
+#
+# [[menu.item]]
+# separator = true
+#
+# [[menu.item]]
+# label   = "Reconfigure"
+# actions = [{name = "Reconfigure"}]
+#
+# [[menu.item]]
+# label   = "Exit"
+# actions = [{name = "Exit"}]
