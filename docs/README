@@ -1,11 +1,9 @@
-Config layout for ~/.config/labwc/
+Config layout for ~/.config/labwc-next/
 - autostart
 - environment
-- menu.xml
-- rc.xml
 - shutdown
-- themerc-override
 - xinitrc
+- *.toml       (any .toml file — config, theme colors, keybinds, menus, etc.)
 
-See `man labwc-config and `man labwc-theme` for further details.
+See config.toml for a fully documented reference with all default values.
 

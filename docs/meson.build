@@ -4,9 +4,7 @@ if scdoc.found()
   manpages = [
     'labwc.1',
     'labwc-actions.5',
-    'labwc-config.5',
     'labwc-menu.5',
-    'labwc-theme.5',
     'labnag.1',
   ]
   foreach manpage : manpages
@@ -28,12 +26,8 @@ install_data(
   [
     'autostart',
     'environment',
-    'menu.xml',
     'README',
     'shutdown',
-    'themerc',
-    'rc.xml',
-    'rc.xml.all',
     'config.toml',
   ],
   install_dir: get_option('datadir') / 'doc' / meson.project_name()
