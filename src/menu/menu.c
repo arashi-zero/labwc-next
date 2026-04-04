@@ -29,6 +29,7 @@
 #include "scaled-buffer/scaled-font-buffer.h"
 #include "scaled-buffer/scaled-icon-buffer.h"
 #include "theme.h"
+#include "tomlc17.h"
 #include "translate.h"
 #include "view.h"
 #include "workspaces.h"
@@ -963,6 +964,231 @@ init_windowmenu(void)
 	}
 }
 
+/*
+ * TOML menu parser
+ *
+ * Each [[menu]] entry in any *.toml config file defines a menu:
+ *
+ *   [[menu]]
+ *   id    = "root-menu"
+ *   label = "Root"
+ *
+ *   [[menu.item]]
+ *   label   = "Terminal"
+ *   actions = [{name = "Execute", command = "foot"}]
+ *
+ *   [[menu.item]]
+ *   separator = true          # separator line
+ *
+ *   [[menu.item]]
+ *   separator = "Section"    # titled separator
+ *
+ *   [[menu.item]]
+ *   label   = "Submenu"
+ *   submenu = "other-menu-id"  # link to a menu defined elsewhere
+ *
+ *   [[menu.item]]
+ *   label = "Inline sub"
+ *   [[menu.item.item]]        # nested inline menu items
+ *   label   = "Action"
+ *   actions = [{name = "Close"}]
+ */
+static void
+toml_fill_menu(struct menu *parent, toml_datum_t menu_tab);
+
+static void
+toml_fill_items(struct menu *menu, toml_datum_t items_arr)
+{
+	if (items_arr.type != TOML_ARRAY) {
+		return;
+	}
+	for (int i = 0; i < items_arr.u.arr.size; i++) {
+		toml_datum_t entry = items_arr.u.arr.elem[i];
+		if (entry.type != TOML_TABLE) {
+			continue;
+		}
+
+		/* separator = true  or  separator = "Label" */
+		toml_datum_t sep = toml_get(entry, "separator");
+		if (sep.type == TOML_BOOLEAN && sep.u.boolean) {
+			separator_create(menu, NULL);
+			continue;
+		}
+		if (sep.type == TOML_STRING) {
+			separator_create(menu, sep.u.s);
+			continue;
+		}
+
+		/* label is required for all other item types */
+		toml_datum_t lbl = toml_get(entry, "label");
+		if (lbl.type != TOML_STRING) {
+			wlr_log(WLR_ERROR, "menu.toml: item missing 'label'");
+			continue;
+		}
+		const char *label = lbl.u.s;
+
+		toml_datum_t icon_d = toml_get(entry, "icon");
+		const char *icon = (icon_d.type == TOML_STRING) ? icon_d.u.s : NULL;
+
+		/* submenu = "id"  → link to an already-defined menu */
+		toml_datum_t sub_id = toml_get(entry, "submenu");
+		if (sub_id.type == TOML_STRING) {
+			struct menu *sub = menu_get_by_id(sub_id.u.s);
+			if (!sub) {
+				wlr_log(WLR_ERROR,
+					"menu.toml: submenu '%s' not found",
+					sub_id.u.s);
+				continue;
+			}
+			struct menuitem *item =
+				item_create(menu, label, icon, true);
+			item->submenu = sub;
+			continue;
+		}
+
+		/* inline nested [[menu.item.item]] */
+		toml_datum_t subitems = toml_get(entry, "item");
+		if (subitems.type == TOML_ARRAY) {
+			/* Create an anonymous inline submenu */
+			static int anon_id;
+			char anon[32];
+			snprintf(anon, sizeof(anon), "__toml_sub_%d", anon_id++);
+			struct menu *sub = menu_create(menu, anon, label);
+			struct menuitem *item =
+				item_create(menu, label, icon, true);
+			item->submenu = sub;
+			toml_fill_items(sub, subitems);
+			continue;
+		}
+
+		/* execute = "cmd"  → pipemenu */
+		toml_datum_t exec_d = toml_get(entry, "execute");
+		if (exec_d.type == TOML_STRING) {
+			static int pipe_id;
+			char pid[32];
+			snprintf(pid, sizeof(pid), "__toml_pipe_%d", pipe_id++);
+			struct menu *pipemenu =
+				menu_create(menu, pid, label);
+			pipemenu->execute = xstrdup(exec_d.u.s);
+			struct menuitem *item =
+				item_create(menu, label, icon, true);
+			item->submenu = pipemenu;
+			continue;
+		}
+
+		/* plain item with actions */
+		toml_datum_t actions = toml_get(entry, "actions");
+		if (actions.type != TOML_ARRAY) {
+			wlr_log(WLR_ERROR,
+				"menu.toml: item '%s' has no actions", label);
+			continue;
+		}
+		struct menuitem *item = item_create(menu, label, icon, false);
+		for (int ai = 0; ai < actions.u.arr.size; ai++) {
+			toml_datum_t act = actions.u.arr.elem[ai];
+			if (act.type != TOML_TABLE) {
+				continue;
+			}
+			toml_datum_t name_d = toml_get(act, "name");
+			if (name_d.type != TOML_STRING) {
+				continue;
+			}
+			struct action *action =
+				action_create(name_d.u.s);
+			if (!action) {
+				continue;
+			}
+			/* Pass remaining keys as action arguments */
+			for (int ki = 0; ki < act.u.tab.size; ki++) {
+				const char *akey = act.u.tab.key[ki];
+				if (!strcasecmp(akey, "name")) {
+					continue;
+				}
+				toml_datum_t val = act.u.tab.value[ki];
+				if (val.type == TOML_STRING) {
+					action_arg_from_xml_node(action,
+						akey, val.u.s);
+				}
+			}
+			wl_list_append(&item->actions, &action->link);
+		}
+	}
+}
+
+static void
+toml_fill_menu(struct menu *parent, toml_datum_t menu_tab)
+{
+	toml_datum_t id_d = toml_get(menu_tab, "id");
+	toml_datum_t lbl_d = toml_get(menu_tab, "label");
+	toml_datum_t icon_d = toml_get(menu_tab, "icon");
+	toml_datum_t exec_d = toml_get(menu_tab, "execute");
+
+	if (id_d.type != TOML_STRING) {
+		wlr_log(WLR_ERROR, "menu.toml: [[menu]] missing 'id'");
+		return;
+	}
+	const char *id    = id_d.u.s;
+	const char *label = (lbl_d.type == TOML_STRING) ? lbl_d.u.s : id;
+	const char *icon  = (icon_d.type == TOML_STRING) ? icon_d.u.s : NULL;
+
+	if (exec_d.type == TOML_STRING) {
+		/* Pipemenu definition */
+		struct menu *m = menu_create(parent, id, label);
+		m->execute = xstrdup(exec_d.u.s);
+		if (parent) {
+			struct menuitem *item =
+				item_create(parent, label, icon, true);
+			item->submenu = m;
+		}
+		return;
+	}
+
+	struct menu *m = menu_create(parent, id, label);
+	if (icon) {
+		m->icon_name = xstrdup(icon);
+	}
+	if (parent) {
+		struct menuitem *item =
+			item_create(parent, label, icon, true);
+		item->submenu = m;
+	}
+
+	toml_fill_items(m, toml_get(menu_tab, "item"));
+}
+
+static void
+menu_toml_read(void)
+{
+	struct wl_list paths;
+	paths_config_glob(&paths, "*.toml");
+
+	struct path *p;
+	wl_list_for_each(p, &paths, link) {
+		toml_result_t result = toml_parse_file_ex(p->string);
+		if (!result.ok) {
+			wlr_log(WLR_ERROR, "toml parse error in %s: %s",
+				p->string, result.errmsg);
+			toml_free(result);
+			continue;
+		}
+
+		toml_datum_t menus = toml_get(result.toptab, "menu");
+		if (menus.type == TOML_ARRAY) {
+			wlr_log(WLR_INFO,
+				"read menus from %s", p->string);
+			for (int i = 0; i < menus.u.arr.size; i++) {
+				toml_datum_t m = menus.u.arr.elem[i];
+				if (m.type == TOML_TABLE) {
+					toml_fill_menu(NULL, m);
+				}
+			}
+		}
+
+		toml_free(result);
+	}
+	paths_destroy(&paths);
+}
+
 void
 menu_init(void)
 {
@@ -972,6 +1198,7 @@ menu_init(void)
 	menu_create(NULL, "client-list-combined-menu", _("Windows"));
 	menu_create(NULL, "client-send-to-menu", _("Workspace"));
 
+	menu_toml_read();
 	parse_xml("menu.xml");
 	init_rootmenu();
 	init_windowmenu();
