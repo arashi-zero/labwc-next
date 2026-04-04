@@ -1923,7 +1923,7 @@ rcxml_read(const char *filename)
 	 * Prefer config.toml if it exists. Fall back to rc.xml for
 	 * backward compatibility.
 	 */
-	if (config_toml_read(filename)) {
+	if (config_toml_read()) {
 		post_processing();
 		validate();
 		return;

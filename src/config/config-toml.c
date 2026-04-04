@@ -565,33 +565,22 @@ parse_snapping(toml_datum_t root)
 /* ------------------------------------------------------------------ entry */
 
 bool
-config_toml_read(const char *filename)
+config_toml_read(void)
 {
 	struct wl_list paths;
-
-	if (filename) {
-		wl_list_init(&paths);
-		struct path *path = znew(*path);
-		path->string = xstrdup(filename);
-		wl_list_append(&paths, &path->link);
-	} else {
-		paths_config_create(&paths, "config.toml");
-	}
+	paths_config_glob(&paths, "*.toml");
 
 	if (wl_list_empty(&paths)) {
+		paths_destroy(&paths);
 		return false;
 	}
 
-	/*
-	 * Use the first (highest-priority) config.toml found.
-	 * Unlike rc.xml which supports merge, we keep it simple for now.
-	 */
 	bool found = false;
 	struct path *p;
 	wl_list_for_each(p, &paths, link) {
 		toml_result_t result = toml_parse_file_ex(p->string);
 		if (!result.ok) {
-			wlr_log(WLR_ERROR, "config.toml parse error in %s: %s",
+			wlr_log(WLR_ERROR, "toml parse error in %s: %s",
 				p->string, result.errmsg);
 			toml_free(result);
 			continue;
@@ -612,10 +601,6 @@ config_toml_read(const char *filename)
 
 		toml_free(result);
 		found = true;
-
-		if (!rc.merge_config) {
-			break;
-		}
 	}
 
 	paths_destroy(&paths);

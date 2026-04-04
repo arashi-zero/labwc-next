@@ -6,6 +6,7 @@
  */
 #include "common/dir.h"
 #include <assert.h>
+#include <glob.h>
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,6 +167,68 @@ paths_config_create(struct wl_list *paths, const char *filename)
 		.list = paths,
 	};
 	find_dir(&ctx);
+}
+
+/*
+ * Glob all files matching @pattern (e.g. "*.toml") inside each config
+ * directory, in XDG priority order. Results are appended to @paths in
+ * alphabetical order per directory (glob(3) sorts on Linux).
+ */
+void
+paths_config_glob(struct wl_list *paths, const char *pattern)
+{
+	wl_list_init(paths);
+
+	char globpat[4096];
+	char *debug = getenv("LABWC_DEBUG_DIR_CONFIG_AND_THEME");
+
+	if (rc.config_dir) {
+		snprintf(globpat, sizeof(globpat), "%s/%s", rc.config_dir, pattern);
+		if (debug) {
+			fprintf(stderr, "glob: %s\n", globpat);
+		}
+		glob_t g;
+		if (glob(globpat, 0, NULL, &g) == 0) {
+			for (size_t i = 0; i < g.gl_pathc; i++) {
+				struct path *p = znew(*p);
+				p->string = xstrdup(g.gl_pathv[i]);
+				wl_list_append(paths, &p->link);
+			}
+		}
+		globfree(&g);
+		return;
+	}
+
+	struct buf prefix = BUF_INIT;
+	for (int i = 0; config_dirs[i].path; i++) {
+		struct dir d = config_dirs[i];
+		buf_clear(&prefix);
+		char *pfxenv = getenv(d.prefix);
+		buf_add(&prefix, pfxenv ? pfxenv : d.default_prefix);
+		if (!prefix.len) {
+			continue;
+		}
+		buf_expand_shell_variables(&prefix);
+		gchar **prefixes = g_strsplit(prefix.data, ":", -1);
+		for (gchar **pp = prefixes; *pp; pp++) {
+			snprintf(globpat, sizeof(globpat), "%s/%s/%s",
+				*pp, d.path, pattern);
+			if (debug) {
+				fprintf(stderr, "glob: %s\n", globpat);
+			}
+			glob_t g;
+			if (glob(globpat, 0, NULL, &g) == 0) {
+				for (size_t j = 0; j < g.gl_pathc; j++) {
+					struct path *p = znew(*p);
+					p->string = xstrdup(g.gl_pathv[j]);
+					wl_list_append(paths, &p->link);
+				}
+			}
+			globfree(&g);
+		}
+		g_strfreev(prefixes);
+	}
+	buf_reset(&prefix);
 }
 
 void

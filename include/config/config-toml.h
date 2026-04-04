@@ -5,12 +5,12 @@
 #include <stdbool.h>
 
 /*
- * Try to find and parse ~/.config/labwc/config.toml (or the path given by
- * filename when non-NULL) and populate the global rc struct.
+ * Scan all *.toml files in the labwc-next config directory (XDG order,
+ * alphabetical within each dir) and populate the global rc struct.
  *
- * Returns true if a config.toml was found and parsed, false if not found
- * (so callers can fall back to rc.xml).
+ * Returns true if at least one .toml file was found and parsed, false
+ * if none were found (so callers can fall back to rc.xml).
  */
-bool config_toml_read(const char *filename);
+bool config_toml_read(void);
 
 #endif /* LABWC_CONFIG_TOML_H */

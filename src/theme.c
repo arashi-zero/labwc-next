@@ -29,6 +29,7 @@
 #include "common/parse-bool.h"
 #include "common/string-helpers.h"
 #include "config/rcxml.h"
+#include "config/theme-toml.h"
 #include "img/img.h"
 #include "labwc.h"
 #include "buffer.h"
@@ -1140,39 +1141,6 @@ process_line(struct theme *theme, char *line)
 	entry(theme, key, value);
 }
 
-static void
-theme_read(struct theme *theme, struct wl_list *paths)
-{
-	bool should_merge_config = rc.merge_config;
-	struct wl_list *(*iter)(struct wl_list *list);
-	iter = should_merge_config ? paths_get_prev : paths_get_next;
-
-	for (struct wl_list *elm = iter(paths); elm != paths; elm = iter(elm)) {
-		struct path *path = wl_container_of(elm, path, link);
-		FILE *stream = fopen(path->string, "r");
-		if (!stream) {
-			continue;
-		}
-
-		wlr_log(WLR_INFO, "read theme %s", path->string);
-
-		char *line = NULL;
-		size_t len = 0;
-		while (getline(&line, &len, stream) != -1) {
-			char *p = strrchr(line, '\n');
-			if (p) {
-				*p = '\0';
-			}
-			process_line(theme, line);
-		}
-		zfree(line);
-		fclose(stream);
-		if (!should_merge_config) {
-			break;
-		}
-	}
-}
-
 static struct lab_data_buffer *
 rounded_rect(struct rounded_corner_ctx *ctx)
 {
@@ -1823,23 +1791,8 @@ theme_init(struct theme *theme, const char *theme_name)
 	 */
 	theme_builtin(theme);
 
-	struct wl_list paths;
-
-	if (theme_name) {
-		/*
-		 * Read
-		 *   - <data-dir>/share/themes/$theme_name/labwc/themerc
-		 *   - <data-dir>/share/themes/$theme_name/openbox-3/themerc
-		 */
-		paths_theme_create(&paths, theme_name, "themerc");
-		theme_read(theme, &paths);
-		paths_destroy(&paths);
-	}
-
-	/* Read <config-dir>/labwc/themerc-override */
-	paths_config_create(&paths, "themerc-override");
-	theme_read(theme, &paths);
-	paths_destroy(&paths);
+	/* Read theme colors from all *.toml files in the config directory */
+	theme_toml_read(theme);
 
 	post_processing(theme);
 	create_backgrounds(theme);
