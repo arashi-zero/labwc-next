@@ -15,6 +15,7 @@
 #include "config/keybind.h"
 #include "config/mousebind.h"
 #include "config/rcxml.h"
+#include "config/toml-vars.h"
 #include "action.h"
 #include "view.h"
 #include "workspaces.h"
@@ -31,7 +32,7 @@ toml_str(toml_datum_t tab, const char *key, const char **out)
 	if (d.type != TOML_STRING) {
 		return false;
 	}
-	*out = d.u.s;
+	*out = resolve_var(d.u.s);
 	return true;
 }
 
@@ -579,6 +580,9 @@ config_toml_read(void)
 	}
 
 	bool found = false;
+	/* vars accumulate across files in glob order — name your palette file
+	 * so it sorts first (e.g. 00-vars.toml) to act as a global palette. */
+	vars_clear();
 	struct path *p;
 	wl_list_for_each(p, &paths, link) {
 		toml_result_t result = toml_parse_file_ex(p->string);
@@ -592,6 +596,7 @@ config_toml_read(void)
 		wlr_log(WLR_INFO, "read config file %s", p->string);
 
 		toml_datum_t root = result.toptab;
+		vars_load(root);
 		parse_core(root);
 		parse_placement(root);
 		parse_focus(root);
@@ -606,6 +611,7 @@ config_toml_read(void)
 		found = true;
 	}
 
+	vars_clear(); /* final cleanup */
 	paths_destroy(&paths);
 	return found;
 }

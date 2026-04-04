@@ -12,6 +12,7 @@
 #include "common/list.h"
 #include "common/mem.h"
 #include "common/node-type.h"
+#include "config/toml-vars.h"
 #include "ssd.h"
 
 /* ------------------------------------------------------------------ helpers */
@@ -23,7 +24,7 @@ toml_str(toml_datum_t tab, const char *key, const char **out)
 	if (d.type != TOML_STRING) {
 		return false;
 	}
-	*out = d.u.s;
+	*out = resolve_var(d.u.s);
 	return true;
 }
 
@@ -610,6 +611,9 @@ theme_toml_read(struct theme *theme)
 	paths_config_glob(&paths, "*.toml");
 
 	struct path *p;
+	/* vars accumulate across files in glob order — name your palette file
+	 * so it sorts first (e.g. 00-vars.toml) to act as a global palette. */
+	vars_clear();
 	wl_list_for_each(p, &paths, link) {
 		toml_result_t result = toml_parse_file_ex(p->string);
 		if (!result.ok) {
@@ -622,6 +626,7 @@ theme_toml_read(struct theme *theme)
 		/* only log if the file actually has a [theme.colors] section */
 		toml_datum_t colors = toml_seek(result.toptab, "theme.colors");
 		if (colors.type == TOML_TABLE) {
+			vars_load(result.toptab);
 			wlr_log(WLR_INFO, "read theme colors from %s", p->string);
 			apply_toml(result.toptab, theme);
 		}
@@ -629,5 +634,6 @@ theme_toml_read(struct theme *theme)
 		toml_free(result);
 	}
 
+	vars_clear(); /* final cleanup */
 	paths_destroy(&paths);
 }
