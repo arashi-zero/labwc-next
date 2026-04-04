@@ -387,11 +387,12 @@ parse_osd_colors(toml_datum_t root, struct theme *theme)
 			t->item_active_border_color);
 		toml_color(sc, "item-active-bg",
 			t->item_active_bg_color);
+		toml_color(sc, "item-active-text",
+			t->item_active_text_color);
 		if (toml_int(sc, "item-icon-size", &i) && i > 0) {
 			t->item_icon_size = i;
 		}
 	}
-
 	/* [theme.colors.osd.switcher-thumbnail] */
 	toml_datum_t st = toml_get(sec, "switcher-thumbnail");
 	if (st.type == TOML_TABLE) {
@@ -420,6 +421,8 @@ parse_osd_colors(toml_datum_t root, struct theme *theme)
 			t->item_active_border_color);
 		toml_color(st, "item-active-bg",
 			t->item_active_bg_color);
+		toml_color(st, "item-active-text",
+			t->item_active_text_color);
 		if (toml_int(st, "item-icon-size", &i) && i > 0) {
 			t->item_icon_size = i;
 		}

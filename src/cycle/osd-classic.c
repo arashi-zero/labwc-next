@@ -215,7 +215,8 @@ cycle_osd_classic_init(struct cycle_osd_output *osd_output)
 		create_fields_scene(view, item->normal_tree,
 			text_color, bg_color, field_widths_sum, x, y);
 		create_fields_scene(view, item->active_tree,
-			text_color, active_bg_color, field_widths_sum, x, y);
+			switcher_theme->item_active_text_color, active_bg_color,
+			field_widths_sum, x, y);
 
 		y += switcher_theme->item_height;
 	}

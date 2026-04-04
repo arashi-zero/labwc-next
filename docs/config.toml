@@ -445,6 +445,7 @@ item-padding-y         = 1
 item-active-border-width = 2
 item-active-border     = "#706f6d"
 item-active-bg         = "#bfbcba"
+item-active-text       = "#000000"   # defaults to osd text color
 # item-icon-size       = 16    # defaults to font size
 
 # [theme.colors.osd.switcher-thumbnail]  Alt-Tab thumbnail grid style
@@ -456,6 +457,7 @@ item-padding           = 10
 item-active-border-width = 2
 item-active-border     = "#706f6d"
 item-active-bg         = "#bfbcba"
+item-active-text       = "#000000"   # defaults to osd text color
 item-icon-size         = 60
 
 # [theme.colors.osd.preview]  Border drawn around previewed windows

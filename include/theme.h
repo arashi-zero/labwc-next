@@ -173,6 +173,7 @@ struct theme {
 		int item_active_border_width;
 		float item_active_border_color[4];
 		float item_active_bg_color[4];
+		float item_active_text_color[4];
 		int item_icon_size;
 		bool width_is_percent;
 
@@ -192,6 +193,7 @@ struct theme {
 		int item_active_border_width;
 		float item_active_border_color[4];
 		float item_active_bg_color[4];
+		float item_active_text_color[4];
 		int item_icon_size;
 		bool max_width_is_percent;
 
