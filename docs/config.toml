@@ -97,10 +97,9 @@ maximized-decoration = "full"
 # [theme.titlebar]
 [theme.titlebar]
 
-# Button layout string, e.g. "iL:NMC" — pipe separates left/right groups,
-# letters: I=icon, L=shade, T=title, _=spacer, N=minimize, M=maximize,
-#          C=close, O=omnipresent/sticky
-layout = "N:MCI"
+# Button layout string — colon separates left : right groups,
+# comma-separated button names: iconify, max, close, shade, desk, menu, icon
+layout = "iconify:max,close"
 
 # Show the window title text in the titlebar
 show-title = true
@@ -202,9 +201,10 @@ actions = [{name = "SnapToEdge", direction = "down"}]
 double-click-time = 500
 
 # Mouse bindings — each entry is a table in the [[mouse.mousebind]] array.
-# context:   where the binding applies — Root, Frame, Titlebar, Window,
-#            Decoration, Button-Close, Button-Maximize, Button-Minimize,
-#            Button-Shade, Button-Omnipresent, Button-AllDesktops
+# context:   where the binding applies — Root, Frame, Titlebar, Title,
+#            Client, Desktop, Border, Close, Maximize, Iconify, Shade,
+#            AllDesktops, WindowMenu, Icon, TLCorner, TRCorner, BRCorner,
+#            BLCorner, Top, Right, Bottom, Left, All
 # button:    Left, Middle, Right, Side, Extra, Forward, Back, Task;
 #            optionally prefixed with modifiers e.g. "A-Left"
 # direction: Up, Down, Left, Right (for scroll gestures, instead of button)
@@ -254,19 +254,19 @@ event   = "Drag"
 actions = [{name = "Resize"}]
 
 [[mouse.mousebind]]
-context = "Button-Close"
+context = "Close"
 button  = "Left"
 event   = "Click"
 actions = [{name = "Close"}]
 
 [[mouse.mousebind]]
-context = "Button-Maximize"
+context = "Maximize"
 button  = "Left"
 event   = "Click"
 actions = [{name = "ToggleMaximize"}]
 
 [[mouse.mousebind]]
-context = "Button-Minimize"
+context = "Iconify"
 button  = "Left"
 event   = "Click"
 actions = [{name = "Iconify"}]
