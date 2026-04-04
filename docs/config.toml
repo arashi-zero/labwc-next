@@ -360,9 +360,16 @@ toggled-keybind-indicator = "#ff0000"
 
 # Button geometry (shared)
 [theme.colors.window.button]
-width               = 26
-height              = 26
-spacing             = 0
+width               = 26    # button hit area width in pixels
+height              = 26    # button hit area height in pixels
+spacing             = 0     # gap between buttons in pixels
+icon-size           = 0     # icon size in pixels; 0 = fill button area
+                            # when set, the icon is centered inside the button
+                            # works best with SVGs in ~/.config/labwc-next/icons/
+hover-bg-size       = 0     # hover background size in pixels; 0 = fill button area
+                            # when set, the hover bg is centered inside the button
+app-icon-size       = 0     # app icon size in pixels; 0 = legacy formula (80% width, full height)
+                            # when set, the app icon is centered inside the button
 hover-bg            = "#80808020"
 hover-corner-radius = 0
 

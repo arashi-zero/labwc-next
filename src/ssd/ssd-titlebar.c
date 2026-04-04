@@ -93,8 +93,10 @@ ssd_titlebar_create(struct ssd *ssd)
 			enum lab_node_type type = rc.title_buttons_left[b];
 			struct lab_img **imgs =
 				theme->window[active].button_imgs[type];
+			enum lab_button_corner corner = (b == 0)
+				? LAB_BUTTON_CORNER_LEFT : LAB_BUTTON_CORNER_NONE;
 			attach_ssd_button(&subtree->buttons_left, type, parent,
-				imgs, x, y, view);
+				imgs, x, y, view, corner);
 			x += theme->window_button_width + theme->window_button_spacing;
 		}
 
@@ -104,8 +106,11 @@ ssd_titlebar_create(struct ssd *ssd)
 			enum lab_node_type type = rc.title_buttons_right[b];
 			struct lab_img **imgs =
 				theme->window[active].button_imgs[type];
+			enum lab_button_corner corner =
+				(b == rc.nr_title_buttons_right - 1)
+				? LAB_BUTTON_CORNER_RIGHT : LAB_BUTTON_CORNER_NONE;
 			attach_ssd_button(&subtree->buttons_right, type, parent,
-				imgs, x, y, view);
+				imgs, x, y, view, corner);
 		}
 	}
 
@@ -142,6 +147,23 @@ update_button_state(struct ssd_button *button, enum lab_button_state state,
 	} else {
 		button->state_set &= ~state;
 	}
+
+	/* Show/hide the standalone hover background behind the icon */
+	if (button->hover_bg) {
+		bool hovered = (button->state_set & LAB_BS_HOVERED);
+		bool use_rounded = (button->state_set & LAB_BS_ROUNDED)
+			&& button->hover_bg_rounded;
+		struct scaled_img_buffer *want = use_rounded
+			? button->hover_bg_rounded : button->hover_bg;
+		struct scaled_img_buffer *other = use_rounded
+			? button->hover_bg : button->hover_bg_rounded;
+		wlr_scene_node_set_enabled(&want->scene_buffer->node, hovered);
+		if (other) {
+			wlr_scene_node_set_enabled(
+				&other->scene_buffer->node, false);
+		}
+	}
+
 	/* Switch the displayed icon buffer to the new one */
 	for (uint8_t state_set = LAB_BS_DEFAULT;
 			state_set <= LAB_BS_ALL; state_set++) {

@@ -15,6 +15,9 @@ diverges from the upstream labwc philosophy to pursue different design goals.
 - Config and theme format is designed for readability and easy extension
 - No libxml2 dependency
 - Unix socket IPC for external tools (e.g. Quickshell) to query and control workspaces
+- SVG button icon overrides via `~/.config/labwc-next/icons/` — drop a file, it wins over any theme
+- Per-button size controls: `icon-size`, `hover-bg-size`, `app-icon-size` — all independently centered; hover background renders as a separate scene node behind the icon
+- Extended theming surface, see [docs/config.toml](docs/config.toml) for the full list
 
 ## Build
 
@@ -22,7 +25,7 @@ diverges from the upstream labwc philosophy to pursue different design goals.
     meson compile -C build/
 
 Dependencies: wlroots, wayland, libinput, xkbcommon, cairo, pango, glib-2.0,
-libpng. Optional: librsvg >=2.46, libsfdo, xwayland/xcb.
+libpng, librsvg >=2.46. Optional: libsfdo, xwayland/xcb.
 
 ## Configuration
 
@@ -32,6 +35,26 @@ that directory are loaded.
 See [docs/config.toml](docs/config.toml) for a full reference.
 
 Run `labwc-next --reconfigure` to reload configuration and theme.
+
+### Button Icons
+
+Place SVG files in `~/.config/labwc-next/icons/` to override the titlebar
+buttons. A single file is used for both active and inactive states; it is
+recolored by the button color defined in your theme.
+
+| File              | Button     |
+| ----------------- | ---------- |
+| `close.svg`       | Close      |
+| `max.svg`         | Maximize   |
+| `max_toggled.svg` | Restore    |
+| `iconify.svg`     | Minimize   |
+| `menu.svg`        | Window menu |
+| `shade.svg`       | Shade      |
+| `desk.svg`        | Omnipresent |
+
+SVG support is required and enforced at build time (librsvg). The icons
+directory is checked before any Openbox theme files, so dropping an SVG here
+always wins.
 
 ## Usage
 

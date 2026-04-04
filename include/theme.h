@@ -77,6 +77,14 @@ struct theme {
 	int window_button_width;
 	int window_button_height;
 	int window_button_spacing;
+	int window_button_icon_size;     /* 0 = fill button */
+	int window_button_hover_bg_size; /* 0 = fill button */
+	int window_button_app_icon_size; /* 0 = use formula: 80% width, full height */
+
+	/* Standalone hover background image (rendered behind icons) */
+	struct lab_img *hover_bg_img;
+	struct lab_img *hover_bg_left_img;  /* with left-corner rounding */
+	struct lab_img *hover_bg_right_img; /* with right-corner rounding */
 
 	/* button hover effect */
 	float window_button_hover_bg_color[4];

@@ -171,19 +171,39 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 
 	assert(!*img);
 
-	/* PNG */
-	get_button_filename(filename, sizeof(filename), b->name,
-		active ? "-active.png" : "-inactive.png");
-	*img = lab_img_load(LAB_IMG_PNG, filename, rgba);
+	/*
+	 * User icons: ~/.config/labwc-next/icons/<name>.svg
+	 * Checked first; a single file is used for both active and inactive
+	 * states, recolored by the theme's button rgba.
+	 */
+	{
+		char icon_filename[4096];
+		snprintf(icon_filename, sizeof(icon_filename), "icons/%s.svg", b->name);
+		struct wl_list paths;
+		paths_config_create(&paths, icon_filename);
+		struct path *p;
+		wl_list_for_each(p, &paths, link) {
+			if (access(p->string, R_OK) == 0) {
+				*img = lab_img_load(LAB_IMG_SVG, p->string, rgba);
+				break;
+			}
+		}
+		paths_destroy(&paths);
+	}
 
-#if HAVE_RSVG
-	/* SVG */
+	/* PNG */
+	if (!*img) {
+		get_button_filename(filename, sizeof(filename), b->name,
+			active ? "-active.png" : "-inactive.png");
+		*img = lab_img_load(LAB_IMG_PNG, filename, rgba);
+	}
+
+	/* SVG (openbox theme) */
 	if (!*img) {
 		get_button_filename(filename, sizeof(filename), b->name,
 			active ? "-active.svg" : "-inactive.svg");
 		*img = lab_img_load(LAB_IMG_SVG, filename, rgba);
 	}
-#endif
 
 	/* XBM */
 	if (!*img) {
@@ -213,14 +233,13 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 
 	/*
 	 * If hover-icons do not exist, add fallbacks by copying the non-hover
-	 * variant and then adding an overlay.
+	 * variant. The hover background is drawn as a separate scene node
+	 * behind the icon, so no overlay modifier is needed here.
 	 */
 	if (!*img && (b->state_set & LAB_BS_HOVERED)) {
 		struct lab_img *non_hover_img =
 			button_imgs[b->type][b->state_set & ~LAB_BS_HOVERED];
 		*img = lab_img_copy(non_hover_img);
-		lab_img_add_modifier(*img,
-			draw_hover_overlay_on_button);
 	}
 
 	/*
@@ -559,6 +578,9 @@ theme_builtin(struct theme *theme)
 	theme->window_button_width = 26;
 	theme->window_button_height = 26;
 	theme->window_button_spacing = 0;
+	theme->window_button_icon_size = 0;
+	theme->window_button_hover_bg_size = 0;
+	theme->window_button_app_icon_size = 0;
 
 	parse_hexstr("#80808020", theme->window_button_hover_bg_color);
 	theme->window_button_hover_bg_corner_radius = 0;
@@ -1811,6 +1833,22 @@ theme_init(struct theme *theme, const char *theme_name)
 	create_corners(theme);
 	load_buttons(theme);
 	create_shadows(theme);
+
+	/*
+	 * Create a transparent 6x6 bitmap and apply the hover overlay
+	 * modifier to it. This produces a standalone hover background
+	 * image that ssd-button renders behind the icon.
+	 */
+	float transparent[4] = {0, 0, 0, 0};
+	static const char blank_bitmap[6] = {0};
+	theme->hover_bg_img = lab_img_load_from_bitmap(blank_bitmap, transparent);
+	lab_img_add_modifier(theme->hover_bg_img, draw_hover_overlay_on_button);
+
+	theme->hover_bg_left_img = lab_img_copy(theme->hover_bg_img);
+	lab_img_add_modifier(theme->hover_bg_left_img, round_left_corner_button);
+
+	theme->hover_bg_right_img = lab_img_copy(theme->hover_bg_img);
+	lab_img_add_modifier(theme->hover_bg_right_img, round_right_corner_button);
 }
 
 static void destroy_img(struct lab_img **img)
@@ -1832,6 +1870,10 @@ theme_finish(struct theme *theme)
 				.button_imgs[type][state_set]);
 		}
 	}
+
+	destroy_img(&theme->hover_bg_img);
+	destroy_img(&theme->hover_bg_left_img);
+	destroy_img(&theme->hover_bg_right_img);
 
 	enum ssd_active_state active;
 	FOR_EACH_ACTIVE_STATE(active) {

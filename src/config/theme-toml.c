@@ -265,6 +265,15 @@ parse_window_colors(toml_datum_t root, struct theme *theme)
 		if (toml_int(btn, "spacing", &i) && i >= 0) {
 			theme->window_button_spacing = i;
 		}
+		if (toml_int(btn, "icon-size", &i) && i >= 0) {
+			theme->window_button_icon_size = i;
+		}
+		if (toml_int(btn, "hover-bg-size", &i) && i >= 0) {
+			theme->window_button_hover_bg_size = i;
+		}
+		if (toml_int(btn, "app-icon-size", &i) && i >= 0) {
+			theme->window_button_app_icon_size = i;
+		}
 		toml_color(btn, "hover-bg", theme->window_button_hover_bg_color);
 		if (toml_int(btn, "hover-corner-radius", &i) && i >= 0) {
 			theme->window_button_hover_bg_corner_radius = i;

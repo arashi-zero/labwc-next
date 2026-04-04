@@ -75,7 +75,7 @@ input = dependency('libinput', version: '>=1.26', required: wlroots.get_variable
 pixman = dependency('pixman-1')
 math = cc.find_library('m')
 png = dependency('libpng')
-svg = dependency('librsvg-2.0', version: '>=2.46', required: false)
+svg = dependency('librsvg-2.0', version: '>=2.46', required: true)
 sfdo_basedir = dependency(
   'libsfdo-basedir',
   default_options: ['default_library=static', 'examples=false', 'tests=false'],
@@ -117,11 +117,7 @@ endif
 conf_data = configuration_data()
 conf_data.set10('HAVE_XWAYLAND', have_xwayland)
 
-if get_option('svg').disabled()
-  have_rsvg = false
-else
-  have_rsvg = svg.found()
-endif
+have_rsvg = true
 conf_data.set10('HAVE_RSVG', have_rsvg)
 
 conf_data.set10('HAVE_LIBSFDO', have_libsfdo)

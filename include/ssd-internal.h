@@ -135,6 +135,12 @@ struct ssd {
 	struct border margin;
 };
 
+enum lab_button_corner {
+	LAB_BUTTON_CORNER_NONE,
+	LAB_BUTTON_CORNER_LEFT,
+	LAB_BUTTON_CORNER_RIGHT,
+};
+
 struct ssd_button {
 	struct wlr_scene_node *node;
 	enum lab_node_type type;
@@ -154,6 +160,10 @@ struct ssd_button {
 	 */
 	struct scaled_img_buffer *img_buffers[LAB_BS_ALL + 1];
 
+	/* Hover background rendered behind the icon */
+	struct scaled_img_buffer *hover_bg;
+	struct scaled_img_buffer *hover_bg_rounded; /* corner buttons only */
+
 	struct scaled_icon_buffer *window_icon;
 
 	struct wl_list link; /* ssd_titlebar_subtree.buttons_{left,right} */
@@ -166,7 +176,7 @@ struct wlr_scene_tree;
 struct ssd_button *attach_ssd_button(struct wl_list *button_parts,
 	enum lab_node_type type, struct wlr_scene_tree *parent,
 	struct lab_img *imgs[LAB_BS_ALL + 1], int x, int y,
-	struct view *view);
+	struct view *view, enum lab_button_corner corner);
 
 /* SSD internal */
 void ssd_titlebar_create(struct ssd *ssd);
