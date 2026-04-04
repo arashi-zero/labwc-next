@@ -13,7 +13,6 @@ diverges from the upstream labwc philosophy to pursue different design goals.
 - Configuration uses TOML instead of XML — no `rc.xml`, `menu.xml`, or
   `themerc`; all `*.toml` files in the config directory are loaded
 - Config and theme format is designed for readability and easy extension
-- No libxml2 dependency
 - Unix socket IPC for external tools (e.g. Quickshell) to query and control workspaces
 - SVG button icon overrides via `~/.config/labwc-next/icons/` — drop a file, it wins over any theme
 - Per-button size controls: `icon-size`, `hover-bg-size`, `app-icon-size` — all independently centered; hover background renders as a separate scene node behind the icon
