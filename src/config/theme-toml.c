@@ -356,16 +356,40 @@ parse_menu_colors(toml_datum_t root, struct theme *theme)
 	if (toml_int(sec, "border-width", &i) && i >= 0) {
 		theme->menu_border_width = i;
 	}
+	if (toml_int(sec, "corner-radius", &i) && i >= 0) {
+		theme->menu_corner_radius = i;
+	}
 	toml_color(sec, "border", theme->menu_border_color);
 	toml_color(sec, "bg", theme->menu_items_bg_color);
 	toml_color(sec, "text", theme->menu_items_text_color);
 	toml_color(sec, "active-bg", theme->menu_items_active_bg_color);
 	toml_color(sec, "active-text", theme->menu_items_active_text_color);
-	if (toml_int(sec, "padding-x", &i) && i >= 0) {
+	if (toml_int(sec, "active-bg-corner-radius", &i) && i >= 0) {
+		theme->menu_items_active_bg_corner_radius = i;
+	}
+	if (toml_int(sec, "active-bg-padding-x", &i) && i >= 0) {
+		theme->menu_items_active_bg_padding_x = i;
+	}
+	if (toml_int(sec, "active-bg-padding-y", &i) && i >= 0) {
+		theme->menu_items_active_bg_padding_y = i;
+	}
+	if (toml_int(sec, "item-padding-x", &i) && i >= 0) {
 		theme->menu_items_padding_x = i;
 	}
-	if (toml_int(sec, "padding-y", &i) && i >= 0) {
+	if (toml_int(sec, "item-padding-y", &i) && i >= 0) {
 		theme->menu_items_padding_y = i;
+	}
+	if (toml_int(sec, "padding-x", &i) && i >= 0) {
+		theme->menu_padding_x = i;
+	}
+	if (toml_int(sec, "padding-y", &i) && i >= 0) {
+		theme->menu_padding_y = i;
+	}
+	if (toml_int(sec, "text-padding-x", &i) && i >= 0) {
+		theme->menu_items_label_padding_x = i;
+	}
+	if (toml_str(sec, "text-justify", &s)) {
+		theme->menu_items_label_justify = parse_justify(s);
 	}
 	if (toml_int(sec, "separator-width", &i) && i >= 0) {
 		theme->menu_separator_line_thickness = i;

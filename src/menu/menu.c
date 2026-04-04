@@ -2,15 +2,18 @@
 #define _POSIX_C_SOURCE 200809L
 #include "menu/menu.h"
 #include <assert.h>
+#include <cairo.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <wlr/types/wlr_buffer.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/util/log.h>
 #include "action.h"
+#include "buffer.h"
 #include "common/buf.h"
 #include "common/dir.h"
 #include "common/font.h"
@@ -160,9 +163,98 @@ item_create(struct menu *menu, const char *text, const char *icon_name, bool sho
 	return menuitem;
 }
 
+/*
+ * Draw a rounded rectangle path on a cairo context.
+ * (x, y) is the top-left corner; width/height are the inner dimensions.
+ */
+static void
+rounded_rect_path(cairo_t *cr, double x, double y,
+		double width, double height, double r)
+{
+	if (r <= 0) {
+		cairo_rectangle(cr, x, y, width, height);
+		return;
+	}
+	cairo_new_path(cr);
+	cairo_arc(cr, x + r, y + r, r, G_PI, -G_PI / 2.0);
+	cairo_arc(cr, x + width - r, y + r, r, -G_PI / 2.0, 0.0);
+	cairo_arc(cr, x + width - r, y + height - r, r, 0.0, G_PI / 2.0);
+	cairo_arc(cr, x + r, y + height - r, r, G_PI / 2.0, G_PI);
+	cairo_close_path(cr);
+}
+
+/*
+ * Create a scene buffer containing a filled rounded rectangle.
+ * The buffer is rendered at scale=1; the scene renderer handles display scaling.
+ */
+static struct wlr_scene_buffer *
+create_rounded_rect(struct wlr_scene_tree *parent,
+		int width, int height, const float *color, int radius)
+{
+	if (width <= 0 || height <= 0) {
+		return NULL;
+	}
+	radius = MIN(radius, MIN(width, height) / 2);
+
+	struct lab_data_buffer *buf = buffer_create_cairo(width, height, 1.0f);
+	cairo_t *cr = cairo_create(buf->surface);
+	rounded_rect_path(cr, 0, 0, width, height, radius);
+	cairo_set_source_rgba(cr, color[0], color[1], color[2], color[3]);
+	cairo_fill(cr);
+	cairo_surface_flush(buf->surface);
+	cairo_destroy(cr);
+
+	struct wlr_scene_buffer *sb = lab_wlr_scene_buffer_create(parent, &buf->base);
+	wlr_buffer_drop(&buf->base);
+	return sb;
+}
+
+/*
+ * Create a scene buffer for the outer menu background: rounded rect with
+ * a bg fill and optional border stroke.
+ */
+static struct wlr_scene_buffer *
+create_rounded_menu_bg(struct wlr_scene_tree *parent,
+		int width, int height,
+		const float *bg_color, const float *border_color,
+		int border_width, int radius)
+{
+	if (width <= 0 || height <= 0) {
+		return NULL;
+	}
+	radius = MIN(radius, MIN(width, height) / 2);
+
+	struct lab_data_buffer *buf = buffer_create_cairo(width, height, 1.0f);
+	cairo_t *cr = cairo_create(buf->surface);
+
+	double bw2 = border_width / 2.0;
+	double inner_r = MAX(0.0, radius - bw2);
+
+	/* Fill interior */
+	rounded_rect_path(cr, bw2, bw2, width - border_width, height - border_width, inner_r);
+	cairo_set_source_rgba(cr, bg_color[0], bg_color[1], bg_color[2], bg_color[3]);
+	cairo_fill(cr);
+
+	/* Stroke border */
+	if (border_width > 0) {
+		rounded_rect_path(cr, bw2, bw2, width - border_width, height - border_width, inner_r);
+		cairo_set_line_width(cr, border_width);
+		cairo_set_source_rgba(cr,
+			border_color[0], border_color[1], border_color[2], border_color[3]);
+		cairo_stroke(cr);
+	}
+
+	cairo_surface_flush(buf->surface);
+	cairo_destroy(cr);
+
+	struct wlr_scene_buffer *sb = lab_wlr_scene_buffer_create(parent, &buf->base);
+	wlr_buffer_drop(&buf->base);
+	return sb;
+}
+
 static struct wlr_scene_tree *
 item_create_scene_for_state(struct menuitem *item, float *text_color,
-	float *bg_color)
+	float *bg_color, bool is_selected)
 {
 	struct menu *menu = item->parent;
 	struct theme *theme = rc.theme;
@@ -176,7 +268,8 @@ item_create_scene_for_state(struct menuitem *item, float *text_color,
 		icon_width = theme->menu_items_padding_x + icon_size;
 	}
 
-	int bg_width = menu->size.width - 2 * theme->menu_border_width;
+	int item_x = theme->menu_border_width + theme->menu_padding_x;
+	int bg_width = menu->size.width - 2 * item_x;
 	int arrow_width = item->arrow ?
 		font_width(&rc.font_menuitem, item->arrow) + theme->menu_items_padding_x : 0;
 	int label_max_width = bg_width - 2 * theme->menu_items_padding_x
@@ -188,7 +281,21 @@ item_create_scene_for_state(struct menuitem *item, float *text_color,
 	}
 
 	/* Create background */
-	lab_wlr_scene_rect_create(tree, bg_width, theme->menu_item_height, bg_color);
+	int px = is_selected ? theme->menu_items_active_bg_padding_x : 0;
+	int py = is_selected ? theme->menu_items_active_bg_padding_y : 0;
+	int cr = is_selected ? theme->menu_items_active_bg_corner_radius : 0;
+
+	if (is_selected && (px > 0 || py > 0 || cr > 0)) {
+		/* Inset / rounded highlight — show menu bg in the padding area */
+		int hl_w = MAX(0, bg_width - 2 * px);
+		int hl_h = MAX(0, theme->menu_item_height - 2 * py);
+		struct wlr_scene_buffer *hl = create_rounded_rect(tree, hl_w, hl_h, bg_color, cr);
+		if (hl) {
+			wlr_scene_node_set_position(&hl->node, px, py);
+		}
+	} else {
+		lab_wlr_scene_rect_create(tree, bg_width, theme->menu_item_height, bg_color);
+	}
 
 	/* Create icon */
 	bool show_app_icon = !strcmp(item->parent->id, "client-list-combined-menu")
@@ -213,9 +320,15 @@ item_create_scene_for_state(struct menuitem *item, float *text_color,
 	assert(label_buffer);
 	scaled_font_buffer_update(label_buffer, item->text, label_max_width,
 		&rc.font_menuitem, text_color, bg_color);
-	/* Vertically center and left-align label */
-	int x = theme->menu_items_padding_x + icon_width;
+	/* Position label — left-aligned with optional extra padding, or centered */
+	int x;
 	int y = (theme->menu_item_height - label_buffer->height) / 2;
+	if (theme->menu_items_label_justify == LAB_JUSTIFY_CENTER) {
+		int available = bg_width - icon_width - arrow_width;
+		x = icon_width + MAX(0, (available - label_buffer->width) / 2);
+	} else {
+		x = theme->menu_items_padding_x + icon_width + theme->menu_items_label_padding_x;
+	}
 	wlr_scene_node_set_position(&label_buffer->scene_buffer->node, x, y);
 
 	if (!item->arrow) {
@@ -236,7 +349,7 @@ item_create_scene_for_state(struct menuitem *item, float *text_color,
 }
 
 static void
-item_create_scene(struct menuitem *menuitem, int *item_y)
+item_create_scene(struct menuitem *menuitem, int *item_y, int item_x)
 {
 	assert(menuitem);
 	assert(menuitem->type == LAB_MENU_ITEM);
@@ -251,16 +364,15 @@ item_create_scene(struct menuitem *menuitem, int *item_y)
 	/* Create scenes for unselected/selected states */
 	menuitem->normal_tree = item_create_scene_for_state(menuitem,
 		theme->menu_items_text_color,
-		theme->menu_items_bg_color);
+		theme->menu_items_bg_color, false);
 	menuitem->selected_tree = item_create_scene_for_state(menuitem,
 		theme->menu_items_active_text_color,
-		theme->menu_items_active_bg_color);
+		theme->menu_items_active_bg_color, true);
 	/* Hide selected state */
 	wlr_scene_node_set_enabled(&menuitem->selected_tree->node, false);
 
 	/* Position the item in relation to its menu */
-	wlr_scene_node_set_position(&menuitem->tree->node,
-		theme->menu_border_width, *item_y);
+	wlr_scene_node_set_position(&menuitem->tree->node, item_x, *item_y);
 	*item_y += theme->menu_item_height;
 }
 
@@ -285,7 +397,7 @@ separator_create(struct menu *menu, const char *label)
 }
 
 static void
-separator_create_scene(struct menuitem *menuitem, int *item_y)
+separator_create_scene(struct menuitem *menuitem, int *item_y, int item_x)
 {
 	assert(menuitem);
 	assert(menuitem->type == LAB_MENU_SEPARATOR_LINE);
@@ -331,7 +443,7 @@ error:
 }
 
 static void
-title_create_scene(struct menuitem *menuitem, int *item_y)
+title_create_scene(struct menuitem *menuitem, int *item_y, int item_x)
 {
 	assert(menuitem);
 	assert(menuitem->type == LAB_MENU_TITLE);
@@ -348,7 +460,7 @@ title_create_scene(struct menuitem *menuitem, int *item_y)
 	/* Tree to hold background and text buffer */
 	menuitem->normal_tree = lab_wlr_scene_tree_create(menuitem->tree);
 
-	int bg_width = menu->size.width - 2 * theme->menu_border_width;
+	int bg_width = menu->size.width - 2 * item_x;
 	int text_width = bg_width - 2 * theme->menu_items_padding_x;
 
 	if (text_width <= 0) {
@@ -385,8 +497,7 @@ title_create_scene(struct menuitem *menuitem, int *item_y)
 	wlr_scene_node_set_position(&title_font_buffer->scene_buffer->node,
 		title_x, title_y);
 error:
-	wlr_scene_node_set_position(&menuitem->tree->node,
-		theme->menu_border_width, *item_y);
+	wlr_scene_node_set_position(&menuitem->tree->node, item_x, *item_y);
 	*item_y += theme->menu_header_height;
 }
 
@@ -432,34 +543,58 @@ menu_create_scene(struct menu *menu)
 	menu->size.width = MAX(menu->size.width, theme->menu_min_width);
 	menu->size.width = MIN(menu->size.width, theme->menu_max_width);
 
+	int item_x = theme->menu_border_width + theme->menu_padding_x;
+
 	/* Update all items for the new size */
-	int item_y = theme->menu_border_width;
+	int item_y = theme->menu_border_width + theme->menu_padding_y;
 	wl_list_for_each(item, &menu->menuitems, link) {
 		assert(!item->tree);
 		switch (item->type) {
 		case LAB_MENU_ITEM:
-			item_create_scene(item, &item_y);
+			item_create_scene(item, &item_y, item_x);
 			break;
 		case LAB_MENU_SEPARATOR_LINE:
-			separator_create_scene(item, &item_y);
+			separator_create_scene(item, &item_y, item_x);
 			break;
 		case LAB_MENU_TITLE:
-			title_create_scene(item, &item_y);
+			title_create_scene(item, &item_y, item_x);
 			break;
 		}
 	}
-	menu->size.height = item_y + theme->menu_border_width;
+	menu->size.height = item_y + theme->menu_border_width + theme->menu_padding_y;
 
-	struct lab_scene_rect_options opts = {
-		.border_colors = (float *[1]) {theme->menu_border_color},
-		.nr_borders = 1,
-		.border_width = theme->menu_border_width,
-		.width = menu->size.width,
-		.height = menu->size.height,
-	};
-	struct lab_scene_rect *bg_rect =
-		lab_scene_rect_create(menu->scene_tree, &opts);
-	wlr_scene_node_lower_to_bottom(&bg_rect->tree->node);
+	if (theme->menu_corner_radius > 0) {
+		/*
+		 * Rounded outer background: single cairo buffer with filled
+		 * bg + border stroke. Items are rendered on top; note that
+		 * item backgrounds are rectangular, so they will overlap the
+		 * rounded corners if border_width < corner_radius.
+		 * For the cleanest look, set border_width >= corner_radius
+		 * or combine with drop-shadows to visually mask the corners.
+		 */
+		struct wlr_scene_buffer *bg_buf = create_rounded_menu_bg(
+			menu->scene_tree,
+			menu->size.width, menu->size.height,
+			theme->menu_items_bg_color,
+			theme->menu_border_color,
+			theme->menu_border_width,
+			theme->menu_corner_radius);
+		if (bg_buf) {
+			wlr_scene_node_lower_to_bottom(&bg_buf->node);
+		}
+	} else {
+		struct lab_scene_rect_options opts = {
+			.border_colors = (float *[1]) {theme->menu_border_color},
+			.nr_borders = 1,
+			.border_width = theme->menu_border_width,
+			.bg_color = theme->menu_items_bg_color,
+			.width = menu->size.width,
+			.height = menu->size.height,
+		};
+		struct lab_scene_rect *bg_rect =
+			lab_scene_rect_create(menu->scene_tree, &opts);
+		wlr_scene_node_lower_to_bottom(&bg_rect->tree->node);
+	}
 }
 
 static void

@@ -435,13 +435,28 @@ overlap-y              = 0
 min-width              = 20
 max-width              = 200
 border-width           = 1
+# Rounded corners for the outer menu background (0 = square)
+# For clean corners, set border-width >= corner-radius, or combine with shadows
+# corner-radius        = 0
 border                 = "#aaaaaa"
 bg                     = "#fcfbfa"
 text                   = "#000000"
 active-bg              = "#e1dedb"
 active-text            = "#000000"
-padding-x              = 7
-padding-y              = 4
+# Rounded corners for the active item highlight (0 = square)
+# active-bg-corner-radius = 4
+# Inset padding for the active item highlight (0 = full item width/height)
+# active-bg-padding-x  = 4
+# active-bg-padding-y  = 2
+# Outer padding — space between border and first/last item (top and bottom)
+padding                = 0
+item-padding-x         = 7
+item-padding-y         = 4
+# Extra left padding added before the label text (default 0)
+# Has no effect when text-justify = "center"
+# text-padding-x       = 0
+# Text justification within the item: "left" or "center"
+# text-justify         = "left"
 separator-width        = 1
 separator-padding-width  = 6
 separator-padding-height = 3

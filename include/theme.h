@@ -153,14 +153,22 @@ struct theme {
 	int menu_min_width;
 	int menu_max_width;
 	int menu_border_width;
+	int menu_corner_radius;          /* outer menu rounded corners; 0 = square */
 	float menu_border_color[4];
 
 	int menu_items_padding_x;
 	int menu_items_padding_y;
+	int menu_padding_x;                     /* left+right space around item list, inside border */
+	int menu_padding_y;                     /* top+bottom space around item list, inside border */
+	int menu_items_label_padding_x;         /* extra left padding before label text */
+	enum lab_justification menu_items_label_justify; /* left or center */
 	float menu_items_bg_color[4];
 	float menu_items_text_color[4];
 	float menu_items_active_bg_color[4];
 	float menu_items_active_text_color[4];
+	int menu_items_active_bg_corner_radius; /* active highlight rounded corners; 0 = square */
+	int menu_items_active_bg_padding_x;    /* horizontal inset for active highlight */
+	int menu_items_active_bg_padding_y;    /* vertical inset for active highlight */
 
 	int menu_separator_line_thickness;
 	int menu_separator_padding_width;

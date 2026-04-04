@@ -622,14 +622,22 @@ theme_builtin(struct theme *theme)
 	theme->menu_min_width = 20;
 	theme->menu_max_width = 200;
 	theme->menu_border_width = INT_MIN;
+	theme->menu_corner_radius = 0;
 	theme->menu_border_color[0] = FLT_MIN;
 
 	theme->menu_items_padding_x = 7;
 	theme->menu_items_padding_y = 4;
+	theme->menu_padding_x = 0;
+	theme->menu_padding_y = 0;
+	theme->menu_items_label_padding_x = 0;
+	theme->menu_items_label_justify = LAB_JUSTIFY_LEFT;
 	parse_hexstr("#fcfbfa", theme->menu_items_bg_color);
 	parse_hexstr("#000000", theme->menu_items_text_color);
 	parse_hexstr("#e1dedb", theme->menu_items_active_bg_color);
 	parse_hexstr("#000000", theme->menu_items_active_text_color);
+	theme->menu_items_active_bg_corner_radius = 0;
+	theme->menu_items_active_bg_padding_x = 0;
+	theme->menu_items_active_bg_padding_y = 0;
 
 	theme->menu_separator_line_thickness = 1;
 	theme->menu_separator_padding_width = 6;
