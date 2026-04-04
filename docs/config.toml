@@ -1,0 +1,336 @@
+# labwc-next config.toml
+#
+# Drop this file at ~/.config/labwc-next/config.toml.
+# When present it is loaded instead of rc.xml.
+#
+# All values shown are the built-in defaults unless noted otherwise.
+# Lines beginning with # are comments; omit any key to keep the default.
+
+# ---------------------------------------------------------------------------
+# [core]  General compositor behaviour
+# ---------------------------------------------------------------------------
+[core]
+
+# Window decoration: "server" (SSD) or "client" (CSD)
+decoration = "server"
+
+# Gap in pixels between windows when using tiling/snapping
+gap = 0
+
+# Adaptive-sync (VRR): "disabled", "enabled", "fullscreen"
+adaptive-sync = "disabled"
+
+# Allow tearing for reduced latency: "disabled", "enabled",
+# "fullscreen", "fullscreen-forced"
+allow-tearing = "disabled"
+
+# Automatically enable newly connected outputs
+auto-enable-outputs = true
+
+# Try to reuse last-known output mode instead of picking preferred
+reuse-output-mode = false
+
+# Keep XWayland server alive even when no X11 clients are connected
+xwayland-persistence = false
+
+# Enable primary selection (middle-click paste)
+primary-selection = true
+
+# Command used for interactive prompt actions (e.g. Execute with prompt)
+# prompt-command = "bemenu-run"
+
+# ---------------------------------------------------------------------------
+# [placement]  Where new windows appear
+# ---------------------------------------------------------------------------
+[placement]
+
+# Policy: "cascade", "center", "cursor", "fixed", "automatic"
+policy = "cascade"
+
+# Pixel offset for successive cascaded windows
+cascade-offset-x = 0
+cascade-offset-y = 0
+
+# ---------------------------------------------------------------------------
+# [focus]  Input focus behaviour
+# ---------------------------------------------------------------------------
+[focus]
+
+# Move focus to the window under the pointer
+follow-mouse = false
+
+# Only follow mouse when the pointer actually moves (suppresses focus on scroll)
+follow-mouse-requires-movement = true
+
+# Raise focused window to top of stack automatically
+raise-on-focus = false
+
+# ---------------------------------------------------------------------------
+# [theme]  Appearance
+# ---------------------------------------------------------------------------
+[theme]
+
+# Name of the Openbox-compatible theme directory to load
+# name = "Clearlooks-3.4"
+
+# Icon theme name (XDG icon theme)
+# icon-theme = "Papirus"
+
+# Fallback icon name when an app has no icon
+fallback-app-icon = "labwc-next"
+
+# Rounded corner radius in pixels (0 = square)
+corner-radius = 8
+
+# Drop shadows under floating windows
+drop-shadows = false
+
+# Also draw drop shadows under tiled/snapped windows
+drop-shadows-on-tiled = false
+
+# Keep a thin border on maximized windows (so they can still be moved)
+keep-border = true
+
+# Decoration shown on maximized windows: "full" or "none"
+maximized-decoration = "full"
+
+# [theme.titlebar]
+[theme.titlebar]
+
+# Button layout string, e.g. "iL:NMC" — pipe separates left/right groups,
+# letters: I=icon, L=shade, T=title, _=spacer, N=minimize, M=maximize,
+#          C=close, O=omnipresent/sticky
+layout = "N:MCI"
+
+# Show the window title text in the titlebar
+show-title = true
+
+# [theme.font]  — applies to all locations at once
+[theme.font]
+name   = "sans"
+size   = 10
+weight = "normal"   # thin ultralight light semilight book medium semibold bold ultrabold heavy ultraheavy
+slant  = "normal"   # normal italic oblique
+
+# Per-location font overrides (uncomment to use)
+# [theme.font.active]
+# name = "sans"
+# size = 10
+
+# [theme.font.inactive]
+# name = "sans"
+# size = 10
+
+# [theme.font.menu-header]
+# name = "sans"
+# size = 10
+
+# [theme.font.menu-item]
+# name = "sans"
+# size = 10
+
+# [theme.font.osd]
+# name = "sans"
+# size = 10
+
+# ---------------------------------------------------------------------------
+# [keyboard]  Key repeat and bindings
+# ---------------------------------------------------------------------------
+[keyboard]
+
+# Key repeat rate (keys per second) and delay before repeat starts (ms)
+repeat-rate  = 25
+repeat-delay = 600
+
+# Force numlock on at startup: true / false (unset = leave as-is)
+# numlock = true
+
+# Keyboard layout scope: "global" or "window"
+layout-scope = "global"
+
+# Keybindings — each entry is a table in the [[keyboard.keybind]] array.
+# key:              XKB key name, with optional modifiers separated by -
+#                   Modifiers: A=Alt, C=Ctrl, S=Shift, W=Super/Logo,
+#                              H=Hyper, M=Meta
+# on-release:       fire on key release instead of press (default false)
+# layout-dependent: use layout symbols instead of keysyms (default false)
+# allow-when-locked: allow binding even on locked screen (default false)
+# actions:          array of action tables, each with at least "name"
+
+[[keyboard.keybind]]
+key = "A-F4"
+actions = [{name = "Close"}]
+
+[[keyboard.keybind]]
+key = "A-F5"
+actions = [{name = "ToggleMaximize"}]
+
+[[keyboard.keybind]]
+key = "W-Return"
+actions = [{name = "Execute", command = "foot"}]
+
+[[keyboard.keybind]]
+key = "W-d"
+actions = [{name = "Execute", command = "bemenu-run"}]
+
+[[keyboard.keybind]]
+key = "A-Tab"
+actions = [{name = "NextWindow"}]
+
+[[keyboard.keybind]]
+key = "W-Left"
+actions = [{name = "SnapToEdge", direction = "left"}]
+
+[[keyboard.keybind]]
+key = "W-Right"
+actions = [{name = "SnapToEdge", direction = "right"}]
+
+[[keyboard.keybind]]
+key = "W-Up"
+actions = [{name = "SnapToEdge", direction = "up"}]
+
+[[keyboard.keybind]]
+key = "W-Down"
+actions = [{name = "SnapToEdge", direction = "down"}]
+
+# ---------------------------------------------------------------------------
+# [mouse]  Pointer settings and bindings
+# ---------------------------------------------------------------------------
+[mouse]
+
+# Maximum time in ms between clicks to count as a double-click
+double-click-time = 500
+
+# Mouse bindings — each entry is a table in the [[mouse.mousebind]] array.
+# context:   where the binding applies — Root, Frame, Titlebar, Window,
+#            Decoration, Button-Close, Button-Maximize, Button-Minimize,
+#            Button-Shade, Button-Omnipresent, Button-AllDesktops
+# button:    Left, Middle, Right, Side, Extra, Forward, Back, Task;
+#            optionally prefixed with modifiers e.g. "A-Left"
+# direction: Up, Down, Left, Right (for scroll gestures, instead of button)
+# event:     Press, Release, Click, DoubleClick, Drag, Scroll
+# actions:   same format as keyboard actions
+
+[[mouse.mousebind]]
+context = "Root"
+button  = "Left"
+event   = "Press"
+actions = [{name = "Focus"}]
+
+[[mouse.mousebind]]
+context = "Root"
+button  = "Right"
+event   = "Press"
+actions = [{name = "ShowMenu", menu = "root-menu"}]
+
+[[mouse.mousebind]]
+context = "Titlebar"
+button  = "Left"
+event   = "Drag"
+actions = [{name = "Move"}]
+
+[[mouse.mousebind]]
+context = "Titlebar"
+button  = "Left"
+event   = "DoubleClick"
+actions = [{name = "ToggleMaximize"}]
+
+[[mouse.mousebind]]
+context = "Titlebar"
+button  = "Right"
+event   = "Press"
+actions = [{name = "ShowMenu", menu = "client-menu"}]
+
+[[mouse.mousebind]]
+context = "Frame"
+button  = "A-Left"
+event   = "Drag"
+actions = [{name = "Move"}]
+
+[[mouse.mousebind]]
+context = "Frame"
+button  = "A-Right"
+event   = "Drag"
+actions = [{name = "Resize"}]
+
+[[mouse.mousebind]]
+context = "Button-Close"
+button  = "Left"
+event   = "Click"
+actions = [{name = "Close"}]
+
+[[mouse.mousebind]]
+context = "Button-Maximize"
+button  = "Left"
+event   = "Click"
+actions = [{name = "ToggleMaximize"}]
+
+[[mouse.mousebind]]
+context = "Button-Minimize"
+button  = "Left"
+event   = "Click"
+actions = [{name = "Iconify"}]
+
+# ---------------------------------------------------------------------------
+# [workspace]  Virtual workspaces
+# ---------------------------------------------------------------------------
+[workspace]
+
+# How long (ms) the workspace OSD popup is shown; -1 = until focus changes
+popup-time = 1000
+
+# Minimum number of workspaces to keep alive
+min-count = 1
+
+# Prefix used when auto-generating workspace names
+# prefix = "Workspace "
+
+# Name of the workspace to activate on startup
+# initial = "1"
+
+# Explicit workspace names (overrides min-count / prefix)
+# names = ["1", "2", "3", "4"]
+
+# ---------------------------------------------------------------------------
+# [resistance]  Edge resistance for dragging and snapping
+# ---------------------------------------------------------------------------
+[resistance]
+
+# Resistance strength against screen edges while moving (px)
+screen-edge-strength = 20
+
+# Resistance strength against other window edges while moving (px)
+window-edge-strength = 20
+
+# How far past a snap edge to drag before the window unsnaps (px)
+unsnap-threshold = 20
+
+# How far to drag down past the top of the screen before window unmaximizes (px)
+unmaximize-threshold = 150
+
+# ---------------------------------------------------------------------------
+# [snapping]  Edge-snapping / tiling
+# ---------------------------------------------------------------------------
+[snapping]
+
+# Detection range inside the screen edge (px)
+range-inner = 10
+
+# Detection range outside the screen area (px, for multi-monitor gaps)
+range-outer = 10
+
+# Corner hot-zone size (px)
+corner-range = 50
+
+# Dragging to the very top edge maximizes the window
+top-maximize = true
+
+# Send xdg-tiling-state hints to clients:
+# "always", "region" (only when region-snapped), "edge", "never"
+notify-client = "always"
+
+# [snapping.overlay]  Visual preview shown while dragging near an edge
+[snapping.overlay]
+enabled     = true
+delay-inner = 500   # ms before overlay appears for inner-range snaps
+delay-outer = 500   # ms before overlay appears for outer-range snaps

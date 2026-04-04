@@ -33,7 +33,8 @@ install_data(
     'shutdown',
     'themerc',
     'rc.xml',
-    'rc.xml.all'
+    'rc.xml.all',
+    'config.toml',
   ],
   install_dir: get_option('datadir') / 'doc' / meson.project_name()
 )
