@@ -396,6 +396,16 @@ all          = "#000000"   # sets all button icon colors at once
 # shade       = "#000000"
 # omnipresent = "#000000"
 # menu        = "#000000"
+# Hover icon color overrides — applied on cursor hover via ATOP recolor
+# Works for both SVG user icons and XBM/bitmap fallbacks.
+# If not set, inherits the normal button color.
+# hover-all         = "#ffffff"
+# hover-close       = "#ff5f57"
+# hover-maximize    = "#28c840"
+# hover-minimize    = "#febc2e"
+# hover-shade       = "#ffffff"
+# hover-omnipresent = "#ffffff"
+# hover-menu        = "#ffffff"
 
 # ---------------------------------------------------------------------------
 # [theme.colors.window.inactive]  Unfocused windows
@@ -409,6 +419,7 @@ shadow-color = "#00000040"
 
 [theme.colors.window.inactive.button]
 all = "#000000"
+# hover-all = "#ffffff"   # same hover-* keys supported as active button
 
 # ---------------------------------------------------------------------------
 # [theme.colors.menu]  Right-click and client menus

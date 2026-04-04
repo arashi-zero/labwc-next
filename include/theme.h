@@ -100,6 +100,8 @@ struct theme {
 
 		/* TODO: add toggled/hover/pressed/disabled colors for buttons */
 		float button_colors[LAB_NODE_BUTTON_LAST + 1][4];
+		/* Hover icon color; FLT_MIN in [0] means inherit from button_colors */
+		float button_hover_colors[LAB_NODE_BUTTON_LAST + 1][4];
 
 		float border_color[4];
 		float toggled_keybinds_color[4];

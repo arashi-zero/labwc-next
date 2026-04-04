@@ -166,7 +166,10 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 	struct lab_img *(*button_imgs)[LAB_BS_ALL + 1] =
 		theme->window[active].button_imgs;
 	struct lab_img **img = &button_imgs[b->type][b->state_set];
-	float *rgba = theme->window[active].button_colors[b->type];
+	bool is_hover = (b->state_set & LAB_BS_HOVERED);
+	float *rgba = is_hover
+		? theme->window[active].button_hover_colors[b->type]
+		: theme->window[active].button_colors[b->type];
 	char filename[4096];
 
 	assert(!*img);
@@ -240,6 +243,16 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 		struct lab_img *non_hover_img =
 			button_imgs[b->type][b->state_set & ~LAB_BS_HOVERED];
 		*img = lab_img_copy(non_hover_img);
+	}
+
+	/*
+	 * Apply hover tint so SVG user icons and fallback-copied XBM icons
+	 * are recolored in the hover state. The tint uses CAIRO_OPERATOR_ATOP
+	 * so only non-transparent pixels are affected.
+	 */
+	if (*img && is_hover) {
+		lab_img_set_tint(*img,
+			theme->window[active].button_hover_colors[b->type]);
 	}
 
 	/*
@@ -591,6 +604,8 @@ theme_builtin(struct theme *theme)
 			theme->window[SSD_INACTIVE].button_colors[type]);
 		parse_hexstr("#000000",
 			theme->window[SSD_ACTIVE].button_colors[type]);
+		theme->window[SSD_INACTIVE].button_hover_colors[type][0] = FLT_MIN;
+		theme->window[SSD_ACTIVE].button_hover_colors[type][0] = FLT_MIN;
 	}
 
 	theme->window[SSD_ACTIVE].shadow_size = 60;
@@ -1668,6 +1683,25 @@ blend_color_with_bg(float *dst, float *fg, float fg_a, float *bg)
 static void
 post_processing(struct theme *theme)
 {
+	/*
+	 * Inherit hover icon colors from normal colors where not explicitly set.
+	 * The FLT_MIN sentinel is written in theme_builtin() for each type.
+	 */
+	enum ssd_active_state active_state;
+	FOR_EACH_ACTIVE_STATE(active_state) {
+		for (enum lab_node_type type = LAB_NODE_BUTTON_FIRST;
+				type <= LAB_NODE_BUTTON_LAST; type++) {
+			if (theme->window[active_state]
+					.button_hover_colors[type][0] == FLT_MIN) {
+				memcpy(theme->window[active_state]
+						.button_hover_colors[type],
+					theme->window[active_state]
+						.button_colors[type],
+					sizeof(float[4]));
+			}
+		}
+	}
+
 	struct window_switcher_classic_theme *switcher_classic_theme =
 		&theme->osd_window_switcher_classic;
 	struct window_switcher_thumbnail_theme *switcher_thumb_theme =

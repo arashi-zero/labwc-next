@@ -16,6 +16,9 @@ enum lab_img_type {
 struct lab_img {
 	struct wl_array modifiers; /* lab_img_modifier_func_t */
 	struct lab_img_data *data;
+	/* Optional tint: recolors the icon using CAIRO_OPERATOR_ATOP after render */
+	bool has_tint;
+	float tint[4];
 };
 
 struct lab_img *lab_img_load(enum lab_img_type type, const char *path,
@@ -52,6 +55,16 @@ struct lab_img *lab_img_copy(struct lab_img *img);
  * hover effects for window buttons can be drawn over the rendered image.
  */
 void lab_img_add_modifier(struct lab_img *img, lab_img_modifier_func_t modifier);
+
+/**
+ * lab_img_set_tint() - Set an icon tint color applied during rendering
+ * @img: target image
+ * @rgba: RGBA color applied over the rendered image using CAIRO_OPERATOR_ATOP
+ *
+ * Useful for recoloring SVG icons (which ignore xbm_color) on hover.
+ * The tint is applied after all modifier functions.
+ */
+void lab_img_set_tint(struct lab_img *img, float rgba[4]);
 
 /**
  * lab_img_render() - Render lab_img to a buffer

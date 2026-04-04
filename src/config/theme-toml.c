@@ -192,6 +192,34 @@ parse_button_colors(toml_datum_t tab, struct theme *theme,
 			parse_hex(s, theme->window[active].button_colors[map[i].type]);
 		}
 	}
+
+	/* Hover icon color overrides — same keys prefixed with "hover-" */
+	if (toml_str(tab, "hover-all", &s)) {
+		parse_hex(s, rgba);
+		for (enum lab_node_type t = LAB_NODE_BUTTON_FIRST;
+				t <= LAB_NODE_BUTTON_LAST; t++) {
+			memcpy(theme->window[active].button_hover_colors[t],
+				rgba, sizeof(rgba));
+		}
+	}
+
+	struct {
+		const char *key;
+		enum lab_node_type type;
+	} hover_map[] = {
+		{ "hover-close",       LAB_NODE_BUTTON_CLOSE },
+		{ "hover-maximize",    LAB_NODE_BUTTON_MAXIMIZE },
+		{ "hover-minimize",    LAB_NODE_BUTTON_ICONIFY },
+		{ "hover-shade",       LAB_NODE_BUTTON_SHADE },
+		{ "hover-omnipresent", LAB_NODE_BUTTON_OMNIPRESENT },
+		{ "hover-menu",        LAB_NODE_BUTTON_WINDOW_MENU },
+	};
+	for (size_t i = 0; i < sizeof(hover_map) / sizeof(hover_map[0]); i++) {
+		if (toml_str(tab, hover_map[i].key, &s)) {
+			parse_hex(s, theme->window[active]
+				.button_hover_colors[hover_map[i].type]);
+		}
+	}
 }
 
 /*
