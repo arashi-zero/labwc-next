@@ -30,6 +30,7 @@
 #include "common/string-helpers.h"
 #include "config/rcxml.h"
 #include "config/theme-toml.h"
+#include "config/theme-dsl.h"
 #include "img/img.h"
 #include "labwc.h"
 #include "buffer.h"
@@ -1895,6 +1896,9 @@ theme_init(struct theme *theme, const char *theme_name)
 
 	/* Read theme colors from all *.toml files in the config directory */
 	theme_toml_read(theme);
+
+	/* If a theme.labwc file exists, apply it (overrides toml values) */
+	theme_dsl_read(theme);
 
 	post_processing(theme);
 	create_backgrounds(theme);

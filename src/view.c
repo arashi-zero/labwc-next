@@ -19,6 +19,7 @@
 #include "cycle.h"
 #include "foreign-toplevel/foreign.h"
 #include "input/keyboard.h"
+#include "ipc.h"
 #include "labwc.h"
 #include "menu/menu.h"
 #include "output.h"
@@ -1581,6 +1582,7 @@ view_toggle_visible_on_all_workspaces(struct view *view)
 	assert(view);
 	view->visible_on_all_workspaces = !view->visible_on_all_workspaces;
 	ssd_update_geometry(view->ssd);
+	ipc_broadcast_windows();
 }
 
 void
@@ -1592,6 +1594,7 @@ view_move_to_workspace(struct view *view, struct workspace *workspace)
 		view->workspace = workspace;
 		wlr_scene_node_reparent(&view->scene_tree->node,
 			workspace->view_trees[view->layer]);
+		ipc_broadcast_windows();
 	}
 }
 

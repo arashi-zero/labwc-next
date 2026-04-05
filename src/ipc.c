@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,9 +16,10 @@
 #include <wlr/util/log.h>
 #include "common/mem.h"
 #include "labwc.h"
+#include "view.h"
 #include "workspaces.h"
 
-#define IPC_BUF_SIZE 1024
+#define IPC_BUF_SIZE 4096
 
 struct ipc_client {
 	int fd;
@@ -52,6 +54,37 @@ client_send(struct ipc_client *client, const char *msg)
 	}
 }
 
+/*
+ * Build the windows message into buf (size IPC_BUF_SIZE).
+ * Format: windows>><id>:<workspace>:<appid>|...\n
+ * All mapped views, front to back.
+ */
+static void
+build_windows_msg(char *buf, size_t bufsz)
+{
+	int pos = snprintf(buf, bufsz, "windows>>");
+	bool first = true;
+	struct view *view;
+	wl_list_for_each(view, &server.views, link) {
+		if (!view->mapped) {
+			continue;
+		}
+		const char *app_id = view->app_id && *view->app_id
+			? view->app_id : "unknown";
+		const char *ws_name = view->visible_on_all_workspaces
+			? "*" : (view->workspace ? view->workspace->name : "?");
+		int r = snprintf(buf + pos, bufsz - pos,
+			"%s%"PRIu64":%s:%s", first ? "" : "|",
+			view->creation_id, ws_name, app_id);
+		if (r < 0 || (size_t)(pos + r) >= bufsz - 1) {
+			break;
+		}
+		pos += r;
+		first = false;
+	}
+	snprintf(buf + pos, bufsz - pos, "\n");
+}
+
 static void
 handle_command(struct ipc_client *client, const char *cmd)
 {
@@ -83,6 +116,31 @@ handle_command(struct ipc_client *client, const char *cmd)
 		}
 		snprintf(msg + pos, sizeof(msg) - pos, "\n");
 		client_send(client, msg);
+	} else if (strcmp(cmd, "window list") == 0) {
+		char msg[IPC_BUF_SIZE];
+		build_windows_msg(msg, sizeof(msg));
+		client_send(client, msg);
+	} else if (strncmp(cmd, "window focus ", 13) == 0) {
+		uint64_t id = (uint64_t)strtoull(cmd + 13, NULL, 10);
+		struct view *view;
+		bool found = false;
+		wl_list_for_each(view, &server.views, link) {
+			if (view->creation_id == id && view->mapped) {
+				if (view->minimized) {
+					view_minimize(view, false);
+				}
+				if (view->workspace != server.workspaces.current) {
+					workspaces_switch_to(view->workspace,
+						/* update_focus */ false);
+				}
+				desktop_focus_view(view, /* raise */ true);
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			client_send(client, "error: window not found\n");
+		}
 	} else if (strcmp(cmd, "reconfigure") == 0) {
 		raise(SIGHUP);
 	} else {
@@ -178,6 +236,11 @@ handle_new_connection(int fd, uint32_t mask, void *data)
 	snprintf(msg + pos, sizeof(msg) - pos, "\n");
 	client_send(client, msg);
 
+	/* Push current window list */
+	char wmsg[IPC_BUF_SIZE];
+	build_windows_msg(wmsg, sizeof(wmsg));
+	client_send(client, wmsg);
+
 	wlr_log(WLR_DEBUG, "IPC client connected");
 	return 0;
 }
@@ -233,6 +296,22 @@ ipc_init(void)
 	}
 
 	wlr_log(WLR_INFO, "IPC socket listening at %s", socket_path);
+}
+
+void
+ipc_broadcast_windows(void)
+{
+	if (server_fd < 0 || wl_list_empty(&clients)) {
+		return;
+	}
+
+	char msg[IPC_BUF_SIZE];
+	build_windows_msg(msg, sizeof(msg));
+
+	struct ipc_client *client, *tmp;
+	wl_list_for_each_safe(client, tmp, &clients, link) {
+		client_send(client, msg);
+	}
 }
 
 void

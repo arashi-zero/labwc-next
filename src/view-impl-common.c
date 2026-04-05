@@ -2,6 +2,7 @@
 /* view-impl-common.c: common code for shell view->impl functions */
 #include "view-impl-common.h"
 #include "foreign-toplevel/foreign.h"
+#include "ipc.h"
 #include "labwc.h"
 #include "view.h"
 #include "window-rules.h"
@@ -39,6 +40,7 @@ view_impl_map(struct view *view)
 
 	wlr_log(WLR_DEBUG, "[map] identifier=%s, title=%s",
 		view->app_id, view->title);
+	ipc_broadcast_windows();
 }
 
 void
@@ -66,6 +68,7 @@ view_impl_unmap(struct view *view)
 		foreign_toplevel_destroy(view->foreign_toplevel);
 		view->foreign_toplevel = NULL;
 	}
+	ipc_broadcast_windows();
 }
 
 static bool

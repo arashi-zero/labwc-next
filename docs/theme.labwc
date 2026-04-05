@@ -1,0 +1,113 @@
+/*
+ * theme.labwc — sample labwc-next declarative theme
+ *
+ * Place this file at:  ~/.config/labwc-next/theme.labwc
+ *
+ * It is loaded after theme.toml, so any value set here
+ * overrides the TOML equivalent.  You can migrate gradually:
+ * start with just the Window block and leave everything else
+ * in theme.toml.
+ *
+ * Syntax
+ * ------
+ *  $name = value          — variable / design token
+ *  Node { ... }           — component block
+ *  Node name { ... }      — named component (e.g. Button close)
+ *  key: value             — property inside a block
+ *  // ...                 — line comment
+ *  /* ... */              — block comment
+ *
+ * Box-model shorthand (same rules as CSS):
+ *  padding: 6             → all four sides = 6
+ *  padding: 6 5           → top/bottom = 6, left/right = 5
+ *  padding: 6 5 4         → top = 6, left/right = 5, bottom = 4
+ *  padding: 6 5 4 3       → top right bottom left
+ *
+ * Colors: #RGB  #RRGGBB  #RRGGBBAA  (or a $variable)
+ */
+
+/* ---------------------------------------------------------------- palette */
+
+$bg           = #181818
+$bg-inactive  = #1f1f1f
+$border       = #2b2b2b
+$text         = #cccccc
+$text-dim     = #6b6b6b
+$accent       = #0078d4
+
+/* button hover backgrounds */
+$hover-btn    = #80808020
+$hover-close  = #e8112d40
+
+/* ---------------------------------------------------------------- window */
+
+Window {
+    /* border: width color [color-inactive] */
+    border: 1 $border
+
+    corner-radius: 6
+
+    /* shadow: size color */
+    shadow: 16 #00000055
+
+    Titlebar {
+        /* padding: vertical horizontal */
+        padding: 6 5
+
+        background:          $bg
+        background-inactive: $bg-inactive
+
+        /* bottom separator line */
+        border-width: 1
+        border-color:          $border
+        border-color-inactive: $border
+
+        /* ---- title text ---- */
+        Title {
+            margin: 0 8
+            color:          $text
+            color-inactive: $text-dim
+            justify: left
+        }
+
+        /* ---- left slot: app-menu / icon ---- */
+        Left {
+            Button app-menu {
+                padding: 3
+                hover-bg:     $hover-btn
+                corner-radius: 4
+
+                AppIcon { size: 16 }
+            }
+        }
+
+        /* ---- right slot: window control buttons ---- */
+        Right {
+            spacing: 4
+
+            Button iconify {
+                padding: 3
+                hover-bg:     $hover-btn
+                corner-radius: 4
+
+                Icon { name: window-minimize; size: 16 }
+            }
+
+            Button maximize {
+                padding: 3
+                hover-bg:     $hover-btn
+                corner-radius: 4
+
+                Icon { name: window-maximize; size: 16 }
+            }
+
+            Button close {
+                padding: 3
+                hover-bg:     $hover-close
+                corner-radius: 4
+
+                Icon { name: window-close; size: 16 }
+            }
+        }
+    }
+}
