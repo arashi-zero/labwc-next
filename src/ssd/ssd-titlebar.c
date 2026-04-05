@@ -327,6 +327,16 @@ ssd_titlebar_update(struct ssd *ssd)
 	if (ssd->state.was_shaded != view->shaded) {
 		set_alt_button_icon(ssd, LAB_NODE_BUTTON_SHADE, view->shaded);
 		ssd->state.was_shaded = view->shaded;
+		/* Hide bottom border when shaded — the window content is gone */
+		enum ssd_active_state active;
+		FOR_EACH_ACTIVE_STATE(active) {
+			struct ssd_titlebar_subtree *subtree =
+				&ssd->titlebar.subtrees[active];
+			if (subtree->bottom_border) {
+				wlr_scene_node_set_enabled(
+					&subtree->bottom_border->node, !view->shaded);
+			}
+		}
 	}
 
 	if (ssd->state.was_omnipresent != view->visible_on_all_workspaces) {
