@@ -174,6 +174,11 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 
 	assert(!*img);
 
+	/* Track whether the loaded image ignores xbm_color at load time.
+	 * SVG and PNG render their own colors, so the button color must be
+	 * applied as a post-render tint. XBM/XPM/bitmap have it baked in. */
+	bool needs_color_tint = false;
+
 	/*
 	 * User icons: ~/.config/labwc-next/icons/<name>.svg
 	 * Checked first; a single file is used for both active and inactive
@@ -188,6 +193,7 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 		wl_list_for_each(p, &paths, link) {
 			if (access(p->string, R_OK) == 0) {
 				*img = lab_img_load(LAB_IMG_SVG, p->string, rgba);
+				needs_color_tint = (*img != NULL);
 				break;
 			}
 		}
@@ -199,6 +205,7 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 		get_button_filename(filename, sizeof(filename), b->name,
 			active ? "-active.png" : "-inactive.png");
 		*img = lab_img_load(LAB_IMG_PNG, filename, rgba);
+		needs_color_tint = (*img != NULL);
 	}
 
 	/* SVG (openbox theme) */
@@ -206,6 +213,7 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 		get_button_filename(filename, sizeof(filename), b->name,
 			active ? "-active.svg" : "-inactive.svg");
 		*img = lab_img_load(LAB_IMG_SVG, filename, rgba);
+		needs_color_tint = (*img != NULL);
 	}
 
 	/* XBM */
@@ -246,13 +254,17 @@ load_button(struct theme *theme, struct button *b, enum ssd_active_state active)
 	}
 
 	/*
-	 * Apply hover tint so SVG user icons and fallback-copied XBM icons
-	 * are recolored in the hover state. The tint uses CAIRO_OPERATOR_ATOP
-	 * so only non-transparent pixels are affected.
+	 * Apply tint to recolor SVG/PNG icons using CAIRO_OPERATOR_ATOP.
+	 * XBM/XPM/bitmap icons have their color baked in at load time and
+	 * don't need this. For hover, always use the hover color (copied
+	 * non-hover variants also need the tint applied).
 	 */
 	if (*img && is_hover) {
 		lab_img_set_tint(*img,
 			theme->window[active].button_hover_colors[b->type]);
+	} else if (*img && needs_color_tint) {
+		lab_img_set_tint(*img,
+			theme->window[active].button_colors[b->type]);
 	}
 
 	/*
