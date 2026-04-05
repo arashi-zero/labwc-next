@@ -448,8 +448,9 @@ active-text            = "#000000"
 # Inset padding for the active item highlight (0 = full item width/height)
 # active-bg-padding-x  = 4
 # active-bg-padding-y  = 2
-# Outer padding — space between border and first/last item (top and bottom)
-padding                = 0
+# Outer padding — space between border and first/last item
+padding-y              = 0   # top and bottom
+padding-x              = 0   # left and right
 item-padding-x         = 7
 item-padding-y         = 4
 # Extra left padding added before the label text (default 0)
